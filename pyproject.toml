@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vaga-viva"
+version = "0.1.0"
+description = "Synthetic demo for transparent reuse of cancelled healthcare appointments"
+requires-python = ">=3.10"
+dependencies = [
+    "streamlit>=1.40",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
