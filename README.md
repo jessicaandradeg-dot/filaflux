@@ -2,127 +2,353 @@
 
 **Simulador de alocação operacional para o reaproveitamento de vagas de consultas canceladas.**
 
-O FilaFlux demonstra como regras transparentes de compatibilidade e otimização podem apoiar a análise do reaproveitamento de vagas. Por padrão, utiliza exclusivamente dados sintéticos e não se conecta a agendas, filas ou sistemas de saúde reais.
+O **FilaFlux** é um protótipo que demonstra como regras transparentes de compatibilidade e técnicas de otimização podem apoiar a análise do reaproveitamento de vagas de consultas canceladas.
 
-Uma instalação local/privada pode, por configuração explícita, analisar arquivos CSV operacionais autorizados e minimizados. Essa análise é isolada: não sincroniza alterações nem grava alocações na plataforma de origem.
+A proposta é identificar pessoas compatíveis com vagas disponíveis e comparar diferentes estratégias de alocação, permitindo visualizar seus resultados e os critérios utilizados em cada decisão.
 
-O aplicativo também apresenta, em seção independente e opcional, indicadores municipais agregados de capacidade hospitalar e produção ambulatorial do SUS. Esses indicadores não interferem na simulação.
+O projeto possui dois modos de análise:
+
+- **Simulação sintética:** funcionamento padrão, com dados fictícios, sem conexão com agendas, filas ou sistemas de saúde reais.
+- **Análise CSV:** funcionalidade opcional, disponível somente quando habilitada por configuração explícita em uma instalação local ou privada. Permite analisar arquivos operacionais autorizados e minimizados, sem sincronizar alterações ou gravar alocações no sistema de origem.
+
+O aplicativo também apresenta uma seção independente com indicadores municipais agregados de capacidade hospitalar e produção ambulatorial do SUS. Esses dados são utilizados exclusivamente para contextualização e não interferem na simulação.
 
 **[Acessar o FilaFlux](https://filaflux-saude.streamlit.app/)** · **[Código-fonte no GitHub](https://github.com/jessicaandradeg-dot/filaflux)**
 
-## Objetivo
+---
 
-Cancelamentos de consultas podem deixar horários disponíveis enquanto outras pessoas aguardam atendimento. O FilaFlux explora como identificar encaixes compatíveis e comparar diferentes regras de alocação.
+## 1. Objetivo
 
-O protótipo ajuda a discutir como critérios explícitos afetam o preenchimento, a posição na fila e as preferências. Em um serviço real, a equipe responsável continuaria no controle das decisões, das regras autorizadas e do contato com as pessoas.
+Cancelamentos de consultas podem deixar horários disponíveis enquanto outras pessoas aguardam atendimento.
 
-## Funcionalidades
+O FilaFlux explora uma possível solução para esse problema: identificar oportunidades de encaixe e avaliar como diferentes regras de alocação influenciam o preenchimento das vagas.
 
-1. **Fluxo demonstrativo:** selecionar uma vaga fictícia, ver a próxima pessoa compatível e simular aceite ou recusa.
-2. **Compatibilidade explicável:** comparar serviço, data, período e requisitos de acessibilidade.
-3. **Comparação de estratégias:** avaliar fila sequencial, lote máximo e otimização multicritério.
-4. **Parâmetros sintéticos:** definir quantidade de vagas, pessoas, serviços e unidades participantes.
-5. **Análise CSV privada:** comparar dados operacionais pseudonimizados por upload, sem sincronização ou escrita no sistema de origem.
-6. **Contexto público:** consultar indicadores municipais agregados do CNES e SIA/SUS, independentes da simulação.
-7. **Múltiplos cenários sintéticos:** observar a variação dos resultados em cenários reprodutíveis.
+O protótipo permite discutir questões como:
 
-## Estratégias de alocação
+- Como identificar pessoas compatíveis com uma vaga cancelada?
+- Como diferentes estratégias influenciam o número de encaixes?
+- A análise conjunta das vagas pode aumentar o aproveitamento das oportunidades?
+- Como considerar a posição na fila e as preferências de atendimento?
+- Quais são os trade-offs entre as estratégias avaliadas?
 
-- **Fila sequencial:** percorre as vagas e atribui a cada uma a primeira pessoa compatível ainda não utilizada.
-- **Lote máximo:** considera as vagas em conjunto e busca maximizar o total de encaixes, usando cada pessoa no máximo uma vez.
-- **Multicritério experimental:** maximiza preenchimento, depois considera posição na fila e conflitos com preferências de unidade e período. Necessidades de acessibilidade são requisitos obrigatórios.
+Em um serviço real, a equipe responsável continuaria no controle das decisões, das regras autorizadas e do contato com as pessoas.
 
-A posição na fila é fornecida pelo cenário; o sistema não calcula prioridade clínica. O critério multicritério é uma hipótese para discussão, não uma regra assistencial aprovada.
+## 2. Funcionalidades
 
-## Interpretar os resultados
+O aplicativo reúne as seguintes funcionalidades:
 
-- **Vagas alocadas** são pares compatíveis encontrados pela política no cenário.
-- **Dias potenciais** são uma diferença hipotética para uma data-base sintética; não representam espera real nem dias efetivamente evitados.
-- **Amplitude entre grupos** é descritiva, não uma medida validada de equidade.
-- **Múltiplos cenários** avaliam sensibilidade às distribuições artificiais programadas; não estimam impacto no SUS, causalidade ou probabilidade de sucesso no mundo real.
+1. **Simulação do fluxo operacional:** seleção de uma vaga cancelada fictícia, identificação da próxima pessoa compatível e simulação de uma oferta, com possibilidade de aceite ou recusa.
+2. **Compatibilidade explicável:** verificação de serviço, data, período e requisitos de acessibilidade.
+3. **Comparação de estratégias:** avaliação de três políticas de alocação: fila sequencial, lote máximo e otimização multicritério.
+4. **Configuração de cenários:** definição da quantidade de vagas, pessoas, serviços e unidades participantes.
+5. **Análise de arquivos CSV:** comparação de dados operacionais pseudonimizados em uma instalação com a funcionalidade habilitada.
+6. **Indicadores públicos do SUS:** consulta independente de dados municipais agregados do CNES e SIA/SUS.
+7. **Simulação de múltiplos cenários:** repetição reprodutível das comparações para observar a variação dos resultados.
 
-Os resultados demonstram o funcionamento do software e ajudam a discutir trade-offs. Não são evidência clínica ou operacional.
+## 3. Estratégias de alocação
 
-## Dados públicos do SUS
+O FilaFlux compara três abordagens utilizando o mesmo conjunto de vagas e disponibilidades.
 
-As fontes públicas são processadas separadamente e não alimentam as regras de alocação.
+### 3.1. Fila sequencial
 
-### Capacidade hospitalar — CNES
+Percorre as vagas na ordem gerada e atribui a cada uma a primeira pessoa compatível ainda não utilizada.
 
-A seção utiliza a base oficial [Hospitais e Leitos — Portal de Dados Abertos do SUS](https://dadosabertos.saude.gov.br/dataset/hospitais-e-leitos), derivada do CNES, no arquivo anual de 2025. O processamento agrega em memória as 12 competências para o município do Rio de Janeiro (`330455`). Em dezembro, a extração registra 9.764 leitos SUS, 1.287 leitos de UTI SUS e 192 estabelecimentos. O aplicativo não persiste o arquivo bruto nem registros individualizados.
+É uma abordagem simples, mas uma escolha para determinada vaga pode impedir outro encaixe que seria possível com uma distribuição diferente.
 
-### Produção ambulatorial — SIA/SUS
+### 3.2. Lote máximo
 
-A consulta utiliza a [tabulação municipal oficial do SIA/SUS no DATASUS](https://datasus.saude.gov.br/acesso-a-informacao/producao-ambulatorial-sia-sus/): município do estabelecimento Rio de Janeiro (`330455`), ano 2025, linha Município, coluna Ano/mês de processamento, medida Quantidade aprovada (`Qtd.aprovada`) e todas as categorias para os demais filtros.
+Considera as vagas em conjunto e busca maximizar o número total de encaixes compatíveis, garantindo que cada pessoa seja utilizada no máximo uma vez.
 
-A resposta CSV é validada quanto a cabeçalho, presença dos 12 meses, linha municipal única, valores inteiros e consistência do total anual. Apenas os totais mensais e metadados da consulta permanecem na sessão; o CSV não é salvo.
+Essa abordagem permite avaliar se a análise conjunta das oportunidades consegue alcançar um preenchimento superior ao da estratégia sequencial.
 
-Quantidade aprovada não é número de pessoas ou usuários únicos, demanda não atendida, fila, espera ou prova de acesso efetivo. O mês de processamento não corresponde necessariamente ao mês do atendimento. Leitos cadastrados não representam disponibilidade em tempo real. A comparação é descritiva e não demonstra causalidade ou impacto do FilaFlux. O TabNet pode atualizar os meses recentes; a data e hora da consulta devem acompanhar capturas usadas em apresentações.
+### 3.3. Otimização multicritério experimental
 
-## Importação CSV em instalação privada
+Utiliza uma sequência de objetivos:
 
-O modo CSV só aparece quando `FILAFUX_ENABLE_REAL_DATA_UPLOAD=1` está configurado. A instância pública no Streamlit Community Cloud deve permanecer com esse modo desabilitado. O aplicativo não detecta nem garante que um ambiente seja privado.
+1. Maximizar o número total de vagas preenchidas.
+2. Entre as soluções com o mesmo preenchimento, minimizar a soma das posições de fila fornecidas no cenário.
+3. Em seguida, minimizar conflitos com preferências fictícias de unidade e período.
 
-Use somente dados autorizados, minimizados e pseudonimizados. Não inclua nomes, documentos, contato, diagnóstico, texto livre ou colunas adicionais. Necessidades de acessibilidade podem ser dados sensíveis; inclua-as apenas se forem necessárias e autorizadas. Pseudonimização não equivale a anonimização.
+As necessidades de acessibilidade são tratadas como requisitos obrigatórios de compatibilidade, e não como critérios opcionais de pontuação.
 
-Os arquivos são processados em memória e não gravados pelo app. Limpe a sessão ao terminar. Isso não substitui controles de acesso, avaliação de risco ou política institucional de retenção.
+**Importante:** a posição na fila é um atributo fornecido pelo cenário. O sistema não calcula prioridade clínica. A estratégia multicritério é experimental e constitui uma hipótese para discussão metodológica, não uma regra assistencial recomendada ou aprovada.
 
-Limites: dois arquivos CSV UTF-8, até 1 MB cada, no máximo 30 vagas e 60 pessoas. Separe listas com `|`.
+## 4. Indicadores e interpretação dos resultados
 
-**Arquivo de vagas:**
+O aplicativo apresenta indicadores para comparar o comportamento das estratégias.
 
-Campos obrigatórios: `slot_id, service, appointment_date, period, cancellation_source, unit_id`. `accessibility_features` é opcional.
+| Indicador | Significado |
+|---|---|
+| Vagas alocadas | Quantidade de pares compatíveis encontrados pela política no cenário. |
+| Dias potenciais | Diferença hipotética entre uma data-base sintética e a data da vaga. |
+| Amplitude entre grupos | Diferença descritiva entre taxas de ofertas por oportunidades fictícias. |
+| Resultados por cenário | Média, mediana, amplitude e frequência dos melhores preenchimentos nas simulações. |
 
-**Arquivo da fila:**
+Algumas ressalvas são importantes:
 
-Campos obrigatórios: `candidate_id, service, queue_position, available_dates, available_periods`. `preferred_unit_ids` e `accessibility_needs` são opcionais.
+- Dias potenciais não representam tempo de espera real nem dias efetivamente evitados.
+- A amplitude entre grupos não é uma medida validada de equidade e não considera diferenças de necessidade, disponibilidade, barreiras de acesso ou contexto social.
+- As simulações de múltiplos cenários avaliam a sensibilidade às distribuições artificiais programadas.
+- Os resultados não representam estimativas de impacto no SUS, avaliações causais, probabilidades de sucesso no mundo real ou validação externa.
 
-Datas usam `AAAA-MM-DD`; períodos aceitos: `Manhã` e `Tarde`; origem do cancelamento: `Serviço` ou `Paciente`. `candidate_id` deve ser pseudônimo e é exibido nas sugestões. O app oferece modelos CSV para download.
+Os indicadores demonstram o funcionamento do software e permitem discutir os trade-offs entre as políticas avaliadas. Não constituem evidência clínica ou operacional.
 
-A análise gera sugestões para revisão humana. Não contata pessoas, não altera filas reais, não tem integração com agendas e não determina prioridade clínica. Sincronizar ou gravar no sistema de origem exigiria integração separada, autorizada, auditável e validada pelo serviço.
+## 5. Indicadores públicos do SUS
 
-## Referência de produto
+O aplicativo possui uma seção opcional de contextualização com dados públicos agregados de duas fontes: CNES e SIA/SUS.
 
-A [lista de espera da NexHealth](https://www.nexhealth.com/features/waitlist) anuncia seleção de pessoas por disponibilidade e tipo de consulta, aceite online e sincronização automática com calendários clínicos. São funcionalidades divulgadas pelo fornecedor, não evidência independente de impacto. O insight para o FilaFlux é deixar explícita a diferença entre análise offline e operação real: confirmação e sincronização dependem de integração própria e governada. Esta comparação inicial não é uma revisão exaustiva do mercado.
+As consultas são processadas separadamente e **não alimentam as regras de alocação**.
 
-## Limitações e segurança
+### 5.1. Capacidade hospitalar — CNES
 
-O FilaFlux é um protótipo, não um sistema de operação assistencial. Não estima urgência, não calcula prioridade clínica, não faz contato, não substitui profissionais e não comprova redução de filas ou tempo de espera.
+A seção utiliza a base oficial [Hospitais e Leitos — Portal de Dados Abertos do SUS](https://dadosabertos.saude.gov.br/dataset/hospitais-e-leitos), derivada do Cadastro Nacional de Estabelecimentos de Saúde (CNES), utilizando o arquivo anual de 2025.
 
-O projeto usa regras explícitas de compatibilidade e otimização combinatória; não treina nem utiliza modelo preditivo de IA/ML. Não insira dados reais de pacientes na aplicação pública.
+O processamento contempla:
 
-## Executar localmente
+- Município do Rio de Janeiro (código `330455`).
+- Agregação mensal por competência.
+- Contagem de leitos SUS, leitos de UTI SUS e estabelecimentos.
 
-Requer Python 3.10 ou superior.
+A extração validada contém as 12 competências de 2025.
+
+Em dezembro, foram registrados:
+
+- **9.764 leitos SUS**;
+- **1.287 leitos de UTI SUS**;
+- **192 estabelecimentos**.
+
+O arquivo é processado em memória. O aplicativo utiliza os campos necessários para a agregação, incluindo um código temporário de estabelecimento para contagem e verificação de duplicidades. Apenas os indicadores mensais agregados são mantidos na sessão. O arquivo bruto e os registros individualizados não são persistidos pelo aplicativo.
+
+### 5.2. Produção ambulatorial — SIA/SUS
+
+A produção ambulatorial é consultada por meio da [tabulação municipal oficial do SIA/SUS no DATASUS](https://datasus.saude.gov.br/acesso-a-informacao/producao-ambulatorial-sia-sus/).
+
+A consulta utiliza os seguintes parâmetros:
+
+| Parâmetro | Configuração |
+|---|---|
+| Município do estabelecimento | Rio de Janeiro (`330455`) |
+| Ano | 2025 |
+| Linha | Município |
+| Coluna | Ano/mês de processamento |
+| Medida | Quantidade aprovada (`Qtd.aprovada`) |
+| Demais filtros | Todas as categorias |
+
+A consulta utiliza a tabulação municipal agregada, não arquivos brutos estaduais ou registros individualizados.
+
+A resposta CSV passa por validações para verificar:
+
+- Presença do cabeçalho esperado.
+- Existência exata dos 12 meses.
+- Presença de uma única linha municipal.
+- Valores inteiros.
+- Consistência entre a soma mensal e o total anual.
+
+A extração validada retornou **194.949.723 procedimentos ambulatoriais aprovados em 2025**.
+
+O aplicativo mantém na sessão apenas os 12 totais mensais e os metadados da consulta, incluindo fonte, parâmetros, endereço do CSV e data/hora de execução. O arquivo CSV não é salvo pelo aplicativo.
+
+### 5.3. Limitações dos indicadores públicos
+
+Os indicadores possuem caráter exclusivamente descritivo:
+
+- Quantidade aprovada no SIA/SUS não equivale ao número de pessoas ou usuários únicos.
+- Produção aprovada não representa demanda não atendida, tamanho de fila, tempo de espera ou comprovação de acesso efetivo.
+- O mês de processamento não corresponde necessariamente ao mês em que o atendimento ocorreu.
+- Leitos cadastrados no CNES não representam disponibilidade em tempo real.
+- Os dados não medem cancelamentos, filas ou disponibilidade de consultas.
+- A comparação não demonstra causalidade, capacidade assistencial efetiva ou impacto do FilaFlux.
+
+O TabNet pode atualizar os meses mais recentes. Por isso, a data e o horário da consulta devem acompanhar capturas utilizadas em apresentações.
+
+## 6. Análise de arquivos CSV em instalação local ou privada
+
+Além da simulação sintética, o FilaFlux possui um modo opcional de importação de arquivos CSV para análise de dados operacionais.
+
+Essa funcionalidade permite avaliar as regras de compatibilidade e as estratégias de alocação utilizando arquivos autorizados, sem estabelecer integração direta com o sistema de origem.
+
+### 6.1. Habilitação
+
+O modo CSV somente fica disponível quando a seguinte variável de ambiente está configurada:
+
+`FILAFUX_ENABLE_REAL_DATA_UPLOAD=1`
+
+A instância pública publicada no Streamlit Community Cloud deve permanecer com essa funcionalidade desabilitada.
+
+O aplicativo não detecta nem garante que uma instalação seja privada. A habilitação deve ocorrer somente em um ambiente com controles de acesso e segurança adequados.
+
+### 6.2. Cuidados com os dados
+
+Utilize somente dados autorizados, minimizados e pseudonimizados.
+
+Não inclua:
+- Nomes ou documentos de identificação.
+- Telefones, e-mails ou outros dados de contato.
+- Diagnósticos ou informações clínicas desnecessárias.
+- Textos livres.
+- Colunas adicionais que não sejam necessárias à análise.
+
+Necessidades de acessibilidade podem constituir dados pessoais sensíveis e devem ser incluídas somente quando necessárias e devidamente autorizadas.
+
+**Pseudonimização não equivale a anonimização.** Um identificador pseudonimizado ainda pode permitir a identificação de uma pessoa quando combinado com outras informações.
+
+Os arquivos são processados em memória e não são gravados pelo aplicativo. Ao finalizar, limpe a sessão. Esse comportamento não substitui controles de acesso, avaliação de riscos ou políticas institucionais de segurança e retenção de dados.
+
+### 6.3. Formato e limites dos arquivos
+
+A importação aceita:
+
+| Requisito | Limite |
+|---|---|
+| Formato | CSV UTF-8 |
+| Quantidade | 2 arquivos |
+| Tamanho | Até 1 MB por arquivo |
+| Vagas | Até 30 |
+| Pessoas | Até 60 |
+| Separador de listas | `\|` |
+
+São necessários dois arquivos: um com as vagas disponíveis e outro com as pessoas na fila.
+
+**Arquivo de vagas**
+
+Campos obrigatórios:
+
+`slot_id, service, appointment_date, period, cancellation_source, unit_id`
+
+Campo opcional:
+
+`accessibility_features`
+
+**Arquivo da fila**
+
+Campos obrigatórios:
+
+`candidate_id, service, queue_position, available_dates, available_periods`
+
+Campos opcionais:
+
+`preferred_unit_ids, accessibility_needs`
+
+### 6.4. Regras de preenchimento
+
+- Datas devem utilizar o formato `AAAA-MM-DD`.
+- Períodos aceitos: `Manhã` e `Tarde`.
+- Origem do cancelamento: `Serviço` ou `Paciente`.
+- `candidate_id` deve ser um identificador pseudonimizado, pois será exibido nas sugestões.
+- Listas de datas, períodos e preferências devem utilizar `|` como separador.
+
+O aplicativo disponibiliza modelos CSV para download, facilitando a preparação dos arquivos.
+
+### 6.5. Resultado da análise
+
+A importação permite gerar sugestões de alocação para revisão humana.
+
+O modo CSV é exclusivamente analítico:
+- Não contata pessoas.
+- Não altera filas reais.
+- Não sincroniza agendas.
+- Não grava alocações no sistema de origem.
+- Não determina prioridade clínica.
+
+Qualquer integração futura com sistemas de saúde exigiria desenvolvimento separado, autorização institucional, controles de acesso, auditoria e validação pelo serviço responsável.
+
+## 7. Referência de produto
+
+Como referência de mercado, a [NexHealth — Waitlist](https://www.nexhealth.com/features/waitlist) divulga funcionalidades de seleção de pessoas por disponibilidade e tipo de consulta, aceite online e sincronização automática com calendários clínicos.
+
+Essas funcionalidades são informações divulgadas pelo próprio fornecedor, não evidências independentes de impacto.
+
+A comparação ajuda a destacar uma diferença importante na proposta do FilaFlux: enquanto soluções integradas podem operar diretamente sobre agendas clínicas, o protótipo prioriza a análise offline e a comparação transparente de estratégias de alocação.
+
+Esta referência é exploratória e não constitui uma revisão exaustiva do mercado.
+
+## 8. Limitações e segurança
+
+O FilaFlux é um protótipo experimental, não um sistema de operação assistencial.
+
+O aplicativo utiliza regras explícitas de compatibilidade e técnicas de otimização combinatória. **Não treina nem utiliza modelos preditivos de inteligência artificial ou aprendizado de máquina (IA/ML).**
+
+Seus resultados não comprovam redução de filas, diminuição do tempo de espera ou melhoria no acesso aos serviços de saúde.
+
+A aplicação de estratégias semelhantes em serviços reais exigiria, entre outros aspectos:
+
+- Validação com profissionais e gestores de saúde.
+- Definição de critérios assistenciais autorizados.
+- Avaliação de equidade e possíveis barreiras de acesso.
+- Adequação às exigências de segurança e privacidade.
+- Validação operacional e institucional.
+- Integração governada com os sistemas de origem, caso necessária.
+
+**Não insira dados reais de pacientes na aplicação pública.**
+
+## 9. Executar localmente
+
+Requisitos: Python 3.10 ou superior.
+
+Clone o repositório e instale as dependências:
 
 ```powershell
+git clone https://github.com/jessicaandradeg-dot/filaflux.git
+cd filaflux
+
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
+
 python -m pip install -e ".[dev]"
 python -m streamlit run app.py
 ```
 
-Para habilitar a importação CSV numa instalação local/privada, configure a variável de ambiente antes de iniciar:
+### Habilitar a importação CSV
+
+Para habilitar a funcionalidade em uma instalação local ou privada, configure a variável de ambiente antes de iniciar o aplicativo:
 
 ```powershell
 $env:FILAFUX_ENABLE_REAL_DATA_UPLOAD = "1"
 python -m streamlit run app.py
 ```
 
-Não configure essa variável na publicação pública.
+Para manter o modo desabilitado, não configure essa variável.
 
-## Publicar no Streamlit Community Cloud
+**Não habilite a importação CSV na publicação pública.**
 
-A aplicação publicada é pública. Mantenha a importação CSV desabilitada; ela usa cenários sintéticos e, mediante ação do visitante, consulta fontes públicas do SUS. Não recebe dados de pacientes.
+## 10. Publicação no Streamlit Community Cloud
 
-## Testes
+A aplicação publicada está disponível publicamente:
+
+[https://filaflux-saude.streamlit.app/](https://filaflux-saude.streamlit.app/)
+
+A publicação utiliza cenários sintéticos e permite consultar fontes públicas agregadas do SUS mediante ação do visitante.
+
+A importação de arquivos CSV deve permanecer desabilitada nessa instância.
+
+## 11. Testes automatizados
+
+Para executar os testes:
 
 ```powershell
 python -m pytest
 ```
 
-Os testes cobrem compatibilidade, fluxo de ofertas, validação CSV, indicadores, reprodutibilidade dos cenários, otimização multicritério e agregação segura de dados públicos, sem chamadas de rede nos testes.
+A suíte contempla testes de:
 
-## Próximos passos antes de um piloto real
+- Compatibilidade entre vagas e pessoas.
+- Fluxo de ofertas e respostas.
+- Validação dos arquivos CSV.
+- Cálculo de indicadores.
+- Reprodutibilidade dos cenários.
+- Otimização multicritério.
+- Agregação segura de dados públicos.
 
-Validar o processo com profissionais e gestores; definir regras autorizadas; avaliar impactos entre grupos; estabelecer proteção de dados, segurança e persistência; e integrar sistemas somente com autorização e governança. O protótipo atual não está pronto para uso assistencial.
+Os testes não dependem de chamadas de rede, permitindo verificar o comportamento dos componentes em ambiente controlado.
+
+## 12. Próximos passos
+
+Antes de considerar um piloto em ambiente real, são necessários:
+
+1. Validar as regras de compatibilidade com profissionais e gestores de saúde.
+2. Avaliar o comportamento das estratégias com dados operacionais autorizados.
+3. Investigar critérios de equidade, segurança e adequação assistencial.
+4. Definir requisitos institucionais para tratamento e proteção dos dados.
+5. Avaliar a necessidade de integração com agendas e sistemas de regulação, incluindo mecanismos de auditoria e governança.
+
+O FilaFlux é uma demonstração de conceito que busca tornar mais transparentes as decisões de alocação e oferecer uma base para discussão e avaliação de possíveis estratégias de reaproveitamento de vagas.
