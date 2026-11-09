@@ -8,9 +8,6 @@ Uma seção opcional apresenta indicadores municipais agregados de uma fonte
 pública de capacidade hospitalar e da produção ambulatorial do SUS, sem
 interferir na simulação.
 
-> **Em uma frase:** compare uma fila sequencial com estratégias de alocação em
-> lote, observe quem poderia ser compatível com uma vaga fictícia e explore como
-> os resultados mudam em diferentes cenários simulados.
 
 ## O que está sendo demonstrado
 
@@ -125,68 +122,5 @@ trade-offs. Não devem ser interpretados como evidência clínica ou operacional
   apresentação. A série é contexto municipal e não alimenta a simulação de
   alocação.
 
-## Dados sintéticos, IA e segurança
-
-- Todos os nomes, filas, grupos, vagas, preferências e datas da simulação são
-  fictícios. Não insira dados pessoais ou dados reais de pacientes.
-- O projeto usa regras explícitas de compatibilidade e otimização combinatória.
-  **Não treina nem utiliza modelo preditivo de IA/ML.**
-- Dados sintéticos não permitem avaliar validade, calibração, viés ou utilidade
-  de um modelo clínico ou operacional. A inclusão futura de previsões exigiria
-  uma pergunta bem definida, dados autorizados, governança e validação adequada.
-- Nenhuma decisão automática de diagnóstico, prescrição ou prioridade clínica é
-  produzida.
-
-## Executar localmente
-
-Requer Python 3.10 ou superior.
-
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install -e ".[dev]"
-python -m streamlit run app.py
-```
-
-Abra o endereço local mostrado pelo Streamlit (normalmente
-`http://localhost:8501`).
-
-## Publicar no Streamlit Community Cloud
-
-O repositório inclui `requirements.txt` para instalar o projeto e suas
-dependências no Community Cloud. Para publicar:
-
-1. Acesse [share.streamlit.io](https://share.streamlit.io/) e entre com a conta
-   GitHub que tem acesso ao repositório.
-2. Crie um app apontando para `jessicaandradeg-dot/filaflux`, branch `main` e
-   arquivo principal `app.py`.
-3. Aguarde o build e abra a URL pública gerada pelo Streamlit.
-
-A aplicação publicada é pública. Ela usa cenários sintéticos e, mediante ação
-do visitante, consulta fontes públicas do SUS; não recebe dados de pacientes.
-
-## Testes
-
-```powershell
-python -m pytest
-```
-
-Os testes cobrem compatibilidade, fluxo de ofertas, indicadores, reprodutibilidade
-dos cenários, objetivos da otimização multicritério e agregação segura da fonte
-pública por competência, sem chamadas de rede nos testes.
-
-## Estrutura do projeto
-
-```text
-app.py                       Interface Streamlit
-src/filaflux/                Regras, métricas, simuladores e dados públicos
-tests/                       Testes automatizados, incluindo fixtures sintéticas
-pyproject.toml               Dependências e metadados do pacote
-```
-
-## Próximos passos antes de um piloto real
-
-Validar o processo com profissionais e gestores; definir regras autorizadas pelo
-serviço; avaliar impactos sobre diferentes grupos; desenhar proteção de dados,
-segurança e persistência; integrar sistemas somente com autorização e governança.
-O protótipo atual não está pronto para uso assistencial.
+# Aplicativo criado
+- Acesse: filaflux-saude.streamlit.app
