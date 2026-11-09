@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 from statistics import mean, median
 
-from vaga_viva.optimization import allocate_multicriteria
-from vaga_viva.policy_simulation import (
+from filaflux.optimization import allocate_multicriteria
+from filaflux.policy_simulation import (
     PolicyResult,
     allocate_in_batch,
     allocate_sequentially,

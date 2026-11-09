@@ -1,29 +1,91 @@
-# Vaga Viva
+# FilaFlux
 
-MVP de demonstração para reaproveitamento transparente de vagas de consultas
-canceladas. O cenário usa dados inteiramente sintéticos: nenhuma pessoa ou
-informação real de paciente é representada.
+**Simulador de alocação operacional para vagas de consultas canceladas.**
+O FilaFlux demonstra como regras transparentes de compatibilidade e otimização
+podem ajudar uma equipe a avaliar o reaproveitamento de vagas. A demonstração
+usa exclusivamente dados sintéticos e não se conecta a agendas, filas ou
+sistemas de saúde reais.
 
-## Escopo desta etapa
+> **Em uma frase:** compare uma fila sequencial com estratégias de alocação em
+> lote, observe quem poderia ser compatível com uma vaga fictícia e explore como
+> os resultados mudam em diferentes cenários simulados.
 
-- Sugere pessoas compatíveis por serviço, data e período.
-- Mantém a ordem de fila fornecida pelo serviço; não estima prioridade clínica.
-- Exibe os motivos de compatibilidade e oferece somente à próxima pessoa elegível.
-- Registra ofertas pendentes, aceitas ou recusadas e mantém o histórico no cenário.
-- Uma oferta pendente reserva a pessoa; uma recusa permite avançar para a próxima
-  pessoa compatível.
-- Impede uma pessoa com oferta pendente ou aceita de receber outra oferta ao
-  mesmo tempo no cenário.
-- Exibe indicadores operacionais do cenário e a distribuição descritiva de ofertas
-  entre territórios fictícios.
-- Apresenta perfil agregado de disponibilidade por serviço/data/período/unidade
-  sintética e contagem descritiva de oportunidades por grupo fictício.
-- Gera cenários sintéticos reproduzíveis e compara alocação sequencial, máximo
-  preenchimento em lote e uma regra experimental multicritério.
-- Considera preferências declaradas de turno/unidade somente como desempate e
-  trata recursos de acessibilidade necessários como requisitos obrigatórios.
-- Permite repetir a comparação em vários cenários sintéticos para observar a
-  variação dos resultados simulados.
+## O que está sendo demonstrado
+
+1. **Fluxo operacional de uma vaga cancelada:** a equipe seleciona a vaga
+   fictícia, visualiza a próxima pessoa compatível e registra uma oferta simulada.
+   Pode registrar aceite ou recusa; a pendência reserva a pessoa e a recusa
+   permite avançar na fila.
+2. **Compatibilidade explicável:** serviço, data e período precisam coincidir.
+   Necessidades sintéticas de acessibilidade são requisitos obrigatórios.
+3. **Comparação de políticas:** o mesmo conjunto de vagas e disponibilidades é
+   avaliado pela alocação sequencial, pelo emparelhamento de máximo preenchimento
+   e por uma otimização multicritério experimental.
+4. **Perfil de disponibilidade:** contagem agregada de vagas, pessoas
+   compatíveis e pares pessoa-vaga por serviço, data, período e unidade fictícia.
+5. **Indicadores descritivos:** preenchimento, respostas a ofertas e distribuição
+   de oportunidades entre grupos territoriais fictícios.
+6. **Simulação em múltiplos cenários:** repetição reprodutível da comparação de
+   políticas, com média, mediana, amplitude e frequência dos melhores
+   preenchimentos no conjunto simulado.
+
+## Para quem e para qual problema
+
+Cancelamentos de consultas podem deixar horários vagos enquanto pessoas
+aguardam atendimento. O conceito do FilaFlux é apoiar a análise operacional de
+como identificar encaixes compatíveis e comparar regras de reaproveitamento.
+Em um serviço real, a equipe responsável continuaria no controle das decisões,
+das regras autorizadas e do contato com as pessoas.
+
+O protótipo **não** demonstra que filas reais serão reduzidas. Não faz contato,
+não consulta sistemas reais, não estima urgência, não define prioridade clínica
+e não substitui profissionais. Seu propósito é tornar explícitas as regras,
+trade-offs e perguntas que precisariam ser validadas antes de qualquer piloto.
+
+## Como funcionam as políticas
+
+- **Fila sequencial:** percorre as vagas na ordem gerada e atribui a cada uma a
+  primeira pessoa compatível ainda não utilizada. É simples, mas uma escolha
+  flexível para uma vaga pode impedir outro encaixe.
+- **Lote máximo:** considera as vagas em conjunto e busca maximizar o total de
+  encaixes compatíveis, usando cada pessoa no máximo uma vez.
+- **Multicritério experimental:** primeiro maximiza o total preenchido; entre
+  soluções com esse total, minimiza a soma das posições de fila fornecidas no
+  cenário; depois minimiza conflitos com preferências fictícias de unidade e
+  período. As necessidades de acessibilidade são restrições obrigatórias.
+
+A ordem de fila é apenas um atributo fornecido pelo cenário — o sistema não
+calcula prioridade clínica. O critério multicritério é uma hipótese para
+discussão, não uma regra assistencial recomendada ou aprovada.
+
+## O que os números significam (e não significam)
+
+- **Vagas alocadas:** quantidade de pares compatíveis encontrados pela política
+  no cenário.
+- **Dias potenciais:** diferença hipotética entre uma data-base sintética e a
+  data da vaga; não representa tempo de espera real nem dias efetivamente
+  evitados.
+- **Amplitude entre grupos:** diferença descritiva entre taxas de ofertas por
+  oportunidades fictícias. Não é uma medida validada de equidade e não ajusta
+  por necessidade, disponibilidade, barreiras de acesso ou contexto social.
+- **Simulação em múltiplos cenários:** análise de sensibilidade condicionada às
+  distribuições artificiais programadas. Não é estimativa de impacto no SUS,
+  avaliação causal, probabilidade de sucesso no mundo real ou validação externa.
+
+Os resultados servem para demonstrar o funcionamento do software e discutir
+trade-offs. Não devem ser interpretados como evidência clínica ou operacional.
+
+## Dados, IA e segurança
+
+- Todos os nomes, filas, grupos, vagas, preferências e datas da demonstração são
+  fictícios. Não insira dados pessoais ou dados reais de pacientes.
+- O projeto usa regras explícitas de compatibilidade e otimização combinatória.
+  **Não treina nem utiliza modelo preditivo de IA/ML.**
+- Dados sintéticos não permitem avaliar validade, calibração, viés ou utilidade
+  de um modelo clínico ou operacional. A inclusão futura de previsões exigiria
+  uma pergunta bem definida, dados autorizados, governança e validação adequada.
+- Nenhuma decisão automática de diagnóstico, prescrição ou prioridade clínica é
+  produzida.
 
 ## Executar localmente
 
@@ -36,89 +98,31 @@ python -m pip install -e ".[dev]"
 python -m streamlit run app.py
 ```
 
+Abra o endereço local mostrado pelo Streamlit (normalmente
+`http://localhost:8501`).
+
 ## Testes
 
 ```powershell
 python -m pytest
 ```
 
-## Limites conhecidos
+Os testes cobrem compatibilidade, fluxo de ofertas, indicadores, reprodutibilidade
+dos cenários e objetivos da otimização multicritério, incluindo comparação com
+enumeração exaustiva em cenários pequenos.
 
-Este MVP não envia mensagens, acessa agendas reais, determina prioridade
-clínica nem demonstra redução real de espera. Ofertas e respostas são simuladas
-e o histórico existe apenas durante a sessão do navegador. Um uso real exigiria
-validação do fluxo por profissionais, persistência segura e governança adequada.
+## Estrutura do projeto
 
-Os indicadores e grupos territoriais são apenas uma demonstração. A taxa de
-ofertas por oportunidade conta pares sintéticos pessoa-vaga compatíveis; não é
-uma medida de equidade, não controla diferenças de disponibilidade ou critérios
-operacionais e não sustenta conclusões sobre populações reais. Amostras pequenas
-devem ser interpretadas somente como teste visual do produto.
+```text
+app.py                       Interface Streamlit
+src/filaflux/                Regras, modelos, métricas e simuladores
+tests/                       Testes automatizados
+pyproject.toml               Dependências e metadados do pacote
+```
 
-## Indicadores da demonstração
+## Próximos passos antes de um piloto real
 
-- **Preenchimento:** vagas aceitas divididas pelas vagas canceladas no cenário.
-- **Aceite entre respostas:** ofertas aceitas divididas por ofertas aceitas ou
-  recusadas; ofertas pendentes não entram no denominador.
-- **Ofertas por vaga preenchida:** tentativas de oferta para vagas aceitas
-  divididas por essas vagas.
-- **Distribuição sintética:** ofertas emitidas divididas por pares
-  pessoa-vaga compatíveis inicialmente observados em cada grupo fictício.
-
-Os indicadores descrevem apenas as interações registradas na sessão atual.
-Não comparam o produto a uma política real ou a um grupo de controle.
-O perfil de disponibilidade conta, para cada combinação de serviço, data,
-período e unidade sintética, quantas pessoas e pares pessoa-vaga são compatíveis
-com as disponibilidades e requisitos de acessibilidade fornecidos.
-
-O painel de grupos fictícios mostra pessoas no grupo, pessoas com ao menos uma
-oportunidade, pares pessoa-vaga elegíveis e ofertas emitidas. A amplitude entre
-as taxas é descritiva e não é uma métrica de equidade: não ajusta por necessidade,
-preferências, transporte, contexto social ou regras de cada serviço. Em especial,
-sem ofertas observadas a amplitude aparece como N/D.
-
-## Simulador de políticas
-
-Na seção **Simulador: comparar políticas de alocação**, escolha o número de vagas,
-o tamanho da fila e a semente. O cenário inicial usa semente 7, 10 vagas e 10
-pessoas para ilustrar uma diferença entre as estratégias. A mesma combinação
-gera o mesmo cenário:
-
-- **Fila sequencial:** percorre as vagas na ordem gerada e aloca a primeira pessoa
-  compatível ainda não alocada.
-- **Lote máximo:** procura um emparelhamento que maximize a quantidade de vagas
-  preenchidas, respeitando serviço, data, período, acessibilidade e uso único de
-  cada pessoa.
-- **Multicritério experimental:** primeiro maximiza a quantidade preenchida; entre
-  essas soluções, minimiza a soma das posições da fila; por fim, minimiza
-  incompatibilidades com preferências declaradas de turno/unidade. A prioridade
-  de fila é fornecida pelo serviço e não é inferida pelo sistema.
-- A interface expõe a soma das posições e o número de conflitos de preferências
-  da solução multicritério para deixar visíveis os objetivos secundários.
-
-A interface também exibe dias potenciais entre a data de referência hipotética
-de cada pessoa e a data da vaga alocada. Esse número é um contrafactual sintético,
-não uma estimativa de espera real nem de dias efetivamente evitados.
-
-Na seção **Simulação de impacto em múltiplos cenários**, é possível comparar as
-três políticas em até 100 cenários gerados com sementes consecutivas. A tabela
-resume média, mediana, mínimo/máximo, taxa média de preenchimento e frequência
-com que cada política alcança o maior preenchimento observado (incluindo empates).
-É uma análise de sensibilidade interna ao gerador sintético, não uma estimativa
-de efeito no SUS, probabilidade de sucesso real ou avaliação causal.
-
-A comparação não simula resposta a ofertas, necessidade clínica nem impacto
-real. Nenhuma das estratégias otimiza equidade ou substitui uma regra assistencial
-aprovada. A otimização multicritério é uma hipótese de produto para discussão;
-uma implantação exigiria validação dos critérios e do fluxo por cada serviço,
-além de avaliação das consequências para diferentes grupos.
-
-## Por que não há modelo preditivo
-
-O protótipo não treina nem apresenta um modelo de Machine Learning. Dados
-fabricados para a demonstração não permitem avaliar validade externa, calibração,
-viés ou utilidade operacional. Uma previsão só deve ser considerada após definir
-um desfecho operacional não clínico, obter dados autorizados e representativos,
-estabelecer governança e desenhar validação temporal e por grupos, com supervisão
-dos serviços. Nenhuma previsão deve determinar prioridade clínica ou substituir
-decisão profissional.
+Validar o processo com profissionais e gestores; definir regras autorizadas pelo
+serviço; avaliar impactos sobre diferentes grupos; desenhar proteção de dados,
+segurança e persistência; integrar sistemas somente com autorização e governança.
+O protótipo atual não está pronto para uso assistencial.

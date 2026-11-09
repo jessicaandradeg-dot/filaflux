@@ -1,24 +1,24 @@
 import streamlit as st
 
-from vaga_viva.allocation import suggest_candidates
-from vaga_viva.analytics import (
+from filaflux.allocation import suggest_candidates
+from filaflux.analytics import (
     calculate_availability_profile,
     calculate_group_distribution,
     calculate_operational_metrics,
 )
-from vaga_viva.demo_data import load_demo_data
-from vaga_viva.impact_simulation import simulate_policy_impact
-from vaga_viva.optimization import (
+from filaflux.demo_data import load_demo_data
+from filaflux.impact_simulation import simulate_policy_impact
+from filaflux.optimization import (
     allocate_multicriteria,
     potential_wait_days_avoided,
 )
-from vaga_viva.policy_simulation import (
+from filaflux.policy_simulation import (
     allocate_in_batch,
     allocate_sequentially,
     generate_synthetic_scenario,
     summarize_policy_results,
 )
-from vaga_viva.workflow import (
+from filaflux.workflow import (
     FinalOfferStatus,
     OfferAttempt,
     accepted_slot_ids,
@@ -30,7 +30,7 @@ from vaga_viva.workflow import (
 
 
 st.set_page_config(
-    page_title="Vaga Viva | Saúde & Bem-estar",
+    page_title="FilaFlux | Saúde & Bem-estar",
     page_icon="🩺",
     layout="wide",
 )
@@ -58,11 +58,11 @@ def update_offer_status(
     st.session_state.offer_history = history
 
 
-st.title("Vaga Viva")
-st.subheader("Reaproveitamento transparente de vagas canceladas")
+st.title("FilaFlux")
+st.subheader("Simulação inteligente de alocação de consultas canceladas")
 st.caption(
-    "Demonstração com dados inteiramente sintéticos. A ferramenta sugere; "
-    "a equipe responsável decide."
+    "Laboratório de apoio operacional com dados inteiramente sintéticos. "
+    "Compara regras de compatibilidade e alocação; não é uma ferramenta clínica."
 )
 
 history = st.session_state.offer_history

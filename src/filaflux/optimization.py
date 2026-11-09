@@ -2,8 +2,8 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from math import inf
 
-from vaga_viva.models import Candidate, CancelledSlot
-from vaga_viva.policy_simulation import PolicyResult, _eligible_pair_counts_by_area
+from filaflux.models import Candidate, CancelledSlot
+from filaflux.policy_simulation import PolicyResult, _eligible_pair_counts_by_area
 
 
 @dataclass

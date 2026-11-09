@@ -1,8 +1,8 @@
 import pytest
 
-from vaga_viva.allocation import suggest_candidates
-from vaga_viva.demo_data import load_demo_data
-from vaga_viva.workflow import (
+from filaflux.allocation import suggest_candidates
+from filaflux.demo_data import load_demo_data
+from filaflux.workflow import (
     OfferAttempt,
     accepted_slot_ids,
     declined_candidate_ids,

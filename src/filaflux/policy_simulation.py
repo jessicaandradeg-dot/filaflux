@@ -4,8 +4,8 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date, timedelta
 
-from vaga_viva.allocation import suggest_candidates
-from vaga_viva.models import Candidate, CancelledSlot
+from filaflux.allocation import suggest_candidates
+from filaflux.models import Candidate, CancelledSlot
 
 
 @dataclass(frozen=True)

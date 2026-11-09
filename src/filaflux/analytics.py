@@ -2,9 +2,9 @@ from collections import defaultdict
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 
-from vaga_viva.allocation import suggest_candidates
-from vaga_viva.models import Candidate, CancelledSlot
-from vaga_viva.workflow import OfferAttempt, accepted_slot_ids
+from filaflux.allocation import suggest_candidates
+from filaflux.models import Candidate, CancelledSlot
+from filaflux.workflow import OfferAttempt, accepted_slot_ids
 
 
 @dataclass(frozen=True)

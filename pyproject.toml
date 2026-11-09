@@ -3,9 +3,9 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "vaga-viva"
+name = "filaflux"
 version = "0.1.0"
-description = "Synthetic demo for transparent reuse of cancelled healthcare appointments"
+description = "Synthetic healthcare appointment allocation and policy simulation demo"
 requires-python = ">=3.10"
 dependencies = [
     "streamlit>=1.40",

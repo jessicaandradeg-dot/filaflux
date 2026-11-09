@@ -1,6 +1,6 @@
 from collections.abc import Collection, Iterable
 
-from vaga_viva.models import Candidate, CancelledSlot, OfferSuggestion
+from filaflux.models import Candidate, CancelledSlot, OfferSuggestion
 
 
 def suggest_candidates(

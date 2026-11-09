@@ -1,8 +1,8 @@
 from datetime import date
 
-from vaga_viva.allocation import suggest_candidates
-from vaga_viva.demo_data import load_demo_data
-from vaga_viva.models import Candidate, CancelledSlot
+from filaflux.allocation import suggest_candidates
+from filaflux.demo_data import load_demo_data
+from filaflux.models import Candidate, CancelledSlot
 
 
 def test_suggestions_require_matching_service_date_and_period() -> None:

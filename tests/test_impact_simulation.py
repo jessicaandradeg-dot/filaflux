@@ -1,6 +1,6 @@
 import pytest
 
-from vaga_viva.impact_simulation import simulate_policy_impact
+from filaflux.impact_simulation import simulate_policy_impact
 
 
 def test_impact_simulation_is_reproducible() -> None:

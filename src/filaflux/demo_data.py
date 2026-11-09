@@ -1,6 +1,6 @@
 from datetime import date
 
-from vaga_viva.models import Candidate, CancelledSlot
+from filaflux.models import Candidate, CancelledSlot
 
 
 def load_demo_data() -> tuple[list[CancelledSlot], list[Candidate]]:

@@ -1,11 +1,11 @@
-from vaga_viva.analytics import (
+from filaflux.analytics import (
     calculate_availability_profile,
     calculate_group_distribution,
     calculate_operational_metrics,
 )
-from vaga_viva.demo_data import load_demo_data
-from vaga_viva.models import Candidate
-from vaga_viva.workflow import OfferAttempt
+from filaflux.demo_data import load_demo_data
+from filaflux.models import Candidate
+from filaflux.workflow import OfferAttempt
 
 
 def test_operational_metrics_are_undefined_without_responses() -> None:

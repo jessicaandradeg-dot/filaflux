@@ -1,13 +1,13 @@
 from datetime import date
 from itertools import product
 
-from vaga_viva.allocation import suggest_candidates
-from vaga_viva.models import Candidate, CancelledSlot, TimePeriod
-from vaga_viva.optimization import (
+from filaflux.allocation import suggest_candidates
+from filaflux.models import Candidate, CancelledSlot, TimePeriod
+from filaflux.optimization import (
     allocate_multicriteria,
     potential_wait_days_avoided,
 )
-from vaga_viva.policy_simulation import generate_synthetic_scenario
+from filaflux.policy_simulation import generate_synthetic_scenario
 
 
 def build_slot(

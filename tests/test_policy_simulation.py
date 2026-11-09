@@ -1,7 +1,7 @@
 from datetime import date
 
-from vaga_viva.models import Candidate, CancelledSlot
-from vaga_viva.policy_simulation import (
+from filaflux.models import Candidate, CancelledSlot
+from filaflux.policy_simulation import (
     allocate_in_batch,
     allocate_sequentially,
     generate_synthetic_scenario,
