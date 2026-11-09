@@ -151,6 +151,20 @@ python -m streamlit run app.py
 Abra o endereço local mostrado pelo Streamlit (normalmente
 `http://localhost:8501`).
 
+## Publicar no Streamlit Community Cloud
+
+O repositório inclui `requirements.txt` para instalar o projeto e suas
+dependências no Community Cloud. Para publicar:
+
+1. Acesse [share.streamlit.io](https://share.streamlit.io/) e entre com a conta
+   GitHub que tem acesso ao repositório.
+2. Crie um app apontando para `jessicaandradeg-dot/filaflux`, branch `main` e
+   arquivo principal `app.py`.
+3. Aguarde o build e abra a URL pública gerada pelo Streamlit.
+
+A aplicação publicada é pública. Ela usa cenários sintéticos e, mediante ação
+do visitante, consulta fontes públicas do SUS; não recebe dados de pacientes.
+
 ## Testes
 
 ```powershell
