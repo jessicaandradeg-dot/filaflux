@@ -18,6 +18,16 @@ from filaflux.policy_simulation import (
     generate_synthetic_scenario,
     summarize_policy_results,
 )
+from filaflux.public_data import (
+    PILOT_YEAR,
+    SOURCE_PAGE_URL,
+    TABNET_SIA_SOURCE_URL,
+    MonthlyAmbulatoryProduction,
+    MonthlyBedCapacity,
+    PublicDataError,
+    fetch_rio_2025_bed_capacity,
+    fetch_rio_2025_sia_tabulation,
+)
 from filaflux.workflow import (
     FinalOfferStatus,
     OfferAttempt,
@@ -61,8 +71,8 @@ def update_offer_status(
 st.title("FilaFlux")
 st.subheader("Simulação inteligente de alocação de consultas canceladas")
 st.caption(
-    "Laboratório de apoio operacional com dados inteiramente sintéticos. "
-    "Compara regras de compatibilidade e alocação; não é uma ferramenta clínica."
+    "Laboratório de apoio operacional com cenários sintéticos. A seção de dados "
+    "públicos apresenta contexto agregado de capacidade e não alimenta a simulação."
 )
 
 history = st.session_state.offer_history
@@ -653,4 +663,209 @@ with st.expander("Simulação de impacto em múltiplos cenários"):
             "regras programadas. A frequência de máximo admite empate; não é "
             "probabilidade de sucesso no mundo real nem evidência causal. Dados "
             "sintéticos não justificam treinar ou validar um modelo preditivo."
+        )
+
+st.divider()
+with st.expander("Contexto público de capacidade — Rio de Janeiro, 2025"):
+    st.markdown(
+        "Esta consulta carrega a base oficial **Hospitais e Leitos**, derivada do "
+        "CNES, e agrega os registros em memória por competência para o município "
+        "do Rio de Janeiro. Também permite consultar a tabulação municipal "
+        "agregada de produção ambulatorial aprovada do SIA/SUS. Nenhum dado de "
+        "paciente é utilizado."
+    )
+    st.markdown(
+        f"Fonte: [Portal de Dados Abertos do SUS]({SOURCE_PAGE_URL}). "
+        f"Recorte municipal e competências mensais de {PILOT_YEAR}."
+    )
+    st.caption(
+        "Leitos cadastrados não significam leitos vagos em tempo real. Este "
+        "indicador não mede fila, espera, cancelamentos ou produção ambulatorial "
+        "e não altera as regras nem os resultados da simulação sintética."
+    )
+
+    if st.button("Carregar dados agregados de leitos", key="load-public-beds"):
+        with st.spinner("Baixando e agregando a fonte oficial..."):
+            try:
+                st.session_state.public_bed_capacity = (
+                    fetch_rio_2025_bed_capacity()
+                )
+            except PublicDataError as error:
+                st.error(f"Não foi possível carregar os dados: {error}")
+            else:
+                st.success(
+                    "Arquivo validado e agregado em memória; "
+                    "nenhum registro individual foi salvo."
+                )
+
+    if st.button(
+        "Consultar produção ambulatorial agregada do SIA/SUS",
+        key="load-public-sia",
+    ):
+        with st.spinner("Consultando a tabulação municipal do TabNet..."):
+            try:
+                st.session_state.sia_tabulation = (
+                    fetch_rio_2025_sia_tabulation()
+                )
+            except PublicDataError as error:
+                st.error(f"Não foi possível consultar o TabNet: {error}")
+            else:
+                st.success(
+                    "Série mensal validada; somente os totais agregados e os "
+                    "metadados da consulta foram mantidos na sessão."
+                )
+
+    public_bed_capacity: list[MonthlyBedCapacity] | None = (
+        st.session_state.get("public_bed_capacity")
+    )
+    if public_bed_capacity:
+        first = public_bed_capacity[0]
+        latest = public_bed_capacity[-1]
+        st.markdown("#### Evolução da capacidade cadastrada em 2025")
+        capacity_col1, capacity_col2, capacity_col3 = st.columns(3)
+        capacity_col1.metric(
+            "Leitos SUS em dezembro",
+            f"{latest.sus_beds:,}".replace(",", "."),
+            delta=(
+                f"{latest.sus_beds - first.sus_beds:+,}".replace(",", ".")
+                + " vs. janeiro"
+            ),
+        )
+        capacity_col2.metric(
+            "UTI SUS em dezembro",
+            f"{latest.sus_icu_beds:,}".replace(",", "."),
+            delta=(
+                f"{latest.sus_icu_beds - first.sus_icu_beds:+,}".replace(",", ".")
+                + " vs. janeiro"
+            ),
+        )
+        capacity_col3.metric(
+            "Estabelecimentos em dezembro",
+            latest.establishment_count,
+            delta=(
+                f"{latest.establishment_count - first.establishment_count:+,}"
+                .replace(",", ".")
+                + " vs. janeiro"
+            ),
+        )
+        chart_col1, chart_col2, chart_col3 = st.columns(3)
+        monthly_labels = [
+            f"{item.competence[:4]}-{item.competence[4:]}"
+            for item in public_bed_capacity
+        ]
+        chart_col1.line_chart(
+            {
+                "Competência": monthly_labels,
+                "Leitos SUS": [item.sus_beds for item in public_bed_capacity],
+            },
+            x="Competência",
+            y="Leitos SUS",
+            height=220,
+        )
+        chart_col2.line_chart(
+            {
+                "Competência": monthly_labels,
+                "UTI SUS": [item.sus_icu_beds for item in public_bed_capacity],
+            },
+            x="Competência",
+            y="UTI SUS",
+            height=220,
+        )
+        chart_col3.line_chart(
+            {
+                "Competência": monthly_labels,
+                "Estabelecimentos": [
+                    item.establishment_count for item in public_bed_capacity
+                ],
+            },
+            x="Competência",
+            y="Estabelecimentos",
+            height=220,
+        )
+        st.dataframe(
+            [
+                {
+                    "Competência": item.competence,
+                    "Estabelecimentos": item.establishment_count,
+                    "Leitos existentes": item.existing_beds,
+                    "Leitos SUS": item.sus_beds,
+                    "UTI existentes": item.existing_icu_beds,
+                    "UTI SUS": item.sus_icu_beds,
+                }
+                for item in public_bed_capacity
+            ],
+            hide_index=True,
+            width="stretch",
+        )
+
+    sia_tabulation = st.session_state.get("sia_tabulation")
+    if sia_tabulation:
+        monthly_production: tuple[MonthlyAmbulatoryProduction, ...] = (
+            sia_tabulation.monthly
+        )
+        metadata = sia_tabulation.metadata
+        st.markdown("#### Produção ambulatorial aprovada — SIA/SUS")
+        st.markdown(
+            f"Fonte: [Tabulação oficial do SIA/SUS]({metadata.source_page_url}) "
+            f"| Município: {metadata.municipality_name} "
+            f"({metadata.municipality_code}) | Ano: {metadata.year}."
+        )
+        st.caption(
+            f"Consulta realizada em {metadata.retrieved_at} | Linha: "
+            f"{metadata.row_dimension} | Coluna: {metadata.column_dimension} "
+            f"| Medida: {metadata.measure} | Filtros: {metadata.filters}"
+        )
+        st.caption(f"CSV agregado retornado pelo TabNet: {metadata.result_csv_url}")
+        st.line_chart(
+            {
+                "Mês de processamento": [
+                    f"{item.competence[:4]}-{item.competence[4:]}"
+                    for item in monthly_production
+                ],
+                "Procedimentos aprovados": [
+                    item.approved_procedures for item in monthly_production
+                ],
+            },
+            x="Mês de processamento",
+            y="Procedimentos aprovados",
+            height=260,
+        )
+        production_by_competence = {
+            item.competence: item.approved_procedures
+            for item in monthly_production
+        }
+        beds_by_competence = {
+            item.competence: item for item in (public_bed_capacity or [])
+        }
+        comparison_rows = []
+        for competence, approved_procedures in production_by_competence.items():
+            bed_capacity = beds_by_competence.get(competence)
+            comparison_rows.append(
+                {
+                    "Mês de processamento": (
+                        f"{competence[:4]}-{competence[4:]}"
+                    ),
+                    "Procedimentos SIA aprovados": approved_procedures,
+                    "Leitos SUS cadastrados": (
+                        bed_capacity.sus_beds if bed_capacity else "Não carregado"
+                    ),
+                    "UTI SUS cadastrados": (
+                        bed_capacity.sus_icu_beds
+                        if bed_capacity
+                        else "Não carregado"
+                    ),
+                }
+            )
+        st.dataframe(
+            comparison_rows,
+            hide_index=True,
+            width="stretch",
+        )
+        st.caption(
+            "Indicadores mantidos em colunas separadas: produção aprovada não "
+            "significa usuários únicos, demanda não atendida, fila ou espera. "
+            "Leitos são registros cadastrados, não disponibilidade em tempo "
+            "real. A tabela é descritiva e não permite inferir relação causal "
+            "entre produção e capacidade. O TabNet informa que os meses mais "
+            "recentes podem sofrer atualização."
         )

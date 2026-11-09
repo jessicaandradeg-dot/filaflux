@@ -2,9 +2,11 @@
 
 **Simulador de alocação operacional para vagas de consultas canceladas.**
 O FilaFlux demonstra como regras transparentes de compatibilidade e otimização
-podem ajudar uma equipe a avaliar o reaproveitamento de vagas. A demonstração
-usa exclusivamente dados sintéticos e não se conecta a agendas, filas ou
-sistemas de saúde reais.
+podem ajudar uma equipe a avaliar o reaproveitamento de vagas. A simulação usa
+dados sintéticos e não se conecta a agendas, filas ou sistemas de saúde reais.
+Uma seção opcional apresenta indicadores municipais agregados de uma fonte
+pública de capacidade hospitalar e da produção ambulatorial do SUS, sem
+interferir na simulação.
 
 > **Em uma frase:** compare uma fila sequencial com estratégias de alocação em
 > lote, observe quem poderia ser compatível com uma vaga fictícia e explore como
@@ -75,9 +77,57 @@ discussão, não uma regra assistencial recomendada ou aprovada.
 Os resultados servem para demonstrar o funcionamento do software e discutir
 trade-offs. Não devem ser interpretados como evidência clínica ou operacional.
 
-## Dados, IA e segurança
+## Dados públicos de capacidade e produção
 
-- Todos os nomes, filas, grupos, vagas, preferências e datas da demonstração são
+- A seção opcional consulta a base oficial [Hospitais e Leitos — Portal de Dados
+  Abertos do SUS](https://dadosabertos.saude.gov.br/dataset/hospitais-e-leitos),
+  derivada do CNES e usando o arquivo anual de 2025.
+- O arquivo é processado em memória e agregado por competência para o município
+  do Rio de Janeiro (código municipal usado pela base: `330455`). O app mantém
+  apenas os indicadores mensais agregados na sessão; não grava o arquivo bruto
+  nem mostra ou persiste registros por estabelecimento.
+- A extração validada contém as 12 competências de 2025. Em dezembro, a base
+  registra 9.764 leitos SUS, 1.287 leitos de UTI SUS e 192 estabelecimentos.
+- A interface permite comparar a evolução mensal desses três indicadores com
+  janeiro de 2025 como referência; a comparação é descritiva, sem inferência
+  sobre ocupação ou capacidade disponível.
+- São leitos cadastrados, não disponibilidade em tempo real. Esses dados não
+  medem filas, tempo de espera, cancelamentos ou produção ambulatorial e não
+  comprovam impacto do FilaFlux. O indicador é apenas contexto municipal e não
+  alimenta a alocação sintética.
+- A base pode conter campos cadastrais de estabelecimentos; o processamento
+  seleciona apenas município, competência, código temporário de estabelecimento
+  para contagem/checagem de duplicidades e contagens de leitos. Nenhum dado de
+  paciente é usado.
+- A produção ambulatorial é obtida separadamente pela [tabulação municipal
+  oficial do SIA/SUS no DATASUS](https://datasus.saude.gov.br/acesso-a-informacao/producao-ambulatorial-sia-sus/),
+  não pelos arquivos brutos estaduais nem por registros individualizados. A
+  consulta usa município do estabelecimento (`330455`, Rio de Janeiro), ano
+  `2025`, linha Município, coluna Ano/mês de processamento, medida Quantidade
+  aprovada (`Qtd.aprovada`) e todas as categorias para os demais filtros.
+- A resposta CSV é validada para garantir cabeçalho esperado, presença exata dos
+  12 meses, linha municipal única, valores inteiros e consistência entre soma
+  mensal e total anual. Apenas os 12 totais e metadados (fonte, parâmetros,
+  endereço do CSV e data/hora da consulta) são mantidos na sessão; o CSV não é
+  salvo pelo app.
+- A interface apresenta a série SIA em gráfico próprio e, quando a série de
+  leitos também foi carregada, coloca os três indicadores lado a lado na tabela
+  mensal, sem combiná-los em um índice nem compartilhar escala gráfica.
+- **Quantidade aprovada não é número de pessoas ou de usuários únicos, demanda
+  não atendida, fila, espera ou prova de acesso efetivo.** É produção processada
+  e aprovada no SIA, agrupada pelo mês de processamento — não necessariamente
+  pelo mês em que o atendimento ocorreu. Leitos cadastrados também não
+  representam disponibilidade em tempo real. A comparação é descritiva e não
+  demonstra associação causal, capacidade assistencial efetiva ou impacto do
+  FilaFlux.
+- O TabNet pode atualizar os meses mais recentes. A data/hora registrada é a da
+  consulta feita pelo app e deve acompanhar qualquer captura usada em uma
+  apresentação. A série é contexto municipal e não alimenta a simulação de
+  alocação.
+
+## Dados sintéticos, IA e segurança
+
+- Todos os nomes, filas, grupos, vagas, preferências e datas da simulação são
   fictícios. Não insira dados pessoais ou dados reais de pacientes.
 - O projeto usa regras explícitas de compatibilidade e otimização combinatória.
   **Não treina nem utiliza modelo preditivo de IA/ML.**
@@ -108,15 +158,15 @@ python -m pytest
 ```
 
 Os testes cobrem compatibilidade, fluxo de ofertas, indicadores, reprodutibilidade
-dos cenários e objetivos da otimização multicritério, incluindo comparação com
-enumeração exaustiva em cenários pequenos.
+dos cenários, objetivos da otimização multicritério e agregação segura da fonte
+pública por competência, sem chamadas de rede nos testes.
 
 ## Estrutura do projeto
 
 ```text
 app.py                       Interface Streamlit
-src/filaflux/                Regras, modelos, métricas e simuladores
-tests/                       Testes automatizados
+src/filaflux/                Regras, métricas, simuladores e dados públicos
+tests/                       Testes automatizados, incluindo fixtures sintéticas
 pyproject.toml               Dependências e metadados do pacote
 ```
 
