@@ -2,15 +2,17 @@
 
 **Simulador de alocação operacional para vagas de consultas canceladas.**
 O FilaFlux demonstra como regras transparentes de compatibilidade e otimização
-podem ajudar uma equipe a avaliar o reaproveitamento de vagas. A simulação usa
+podem ajudar uma equipe a avaliar o reaproveitamento de vagas. Por padrão, usa
 dados sintéticos e não se conecta a agendas, filas ou sistemas de saúde reais.
+Uma instalação local/privada pode, por configuração explícita, analisar CSVs
+operacionais minimizados; essa análise não grava nem sincroniza alterações.
 Uma seção opcional apresenta indicadores municipais agregados de uma fonte
 pública de capacidade hospitalar e da produção ambulatorial do SUS, sem
 interferir na simulação.
 
 > **Em uma frase:** compare uma fila sequencial com estratégias de alocação em
-> lote, observe quem poderia ser compatível com uma vaga fictícia e explore como
-> os resultados mudam em diferentes cenários simulados.
+> lote e veja sugestões para revisão humana em cenários sintéticos ou em arquivos
+> autorizados carregados numa instalação privada.
 
 ## O que está sendo demonstrado
 
@@ -19,7 +21,7 @@ interferir na simulação.
    Pode registrar aceite ou recusa; a pendência reserva a pessoa e a recusa
    permite avançar na fila.
 2. **Compatibilidade explicável:** serviço, data e período precisam coincidir.
-   Necessidades sintéticas de acessibilidade são requisitos obrigatórios.
+   Necessidades de acessibilidade informadas são requisitos obrigatórios.
 3. **Comparação de políticas:** o mesmo conjunto de vagas e disponibilidades é
    avaliado pela alocação sequencial, pelo emparelhamento de máximo preenchimento
    e por uma otimização multicritério experimental.
@@ -30,6 +32,8 @@ interferir na simulação.
 6. **Simulação em múltiplos cenários:** repetição reprodutível da comparação de
    políticas, com média, mediana, amplitude e frequência dos melhores
    preenchimentos no conjunto simulado.
+7. **Análise CSV privada:** compara estratégias para vagas e filas importadas,
+   sem sincronização ou escrita no sistema de origem.
 
 ## Para quem e para qual problema
 
@@ -127,8 +131,24 @@ trade-offs. Não devem ser interpretados como evidência clínica ou operacional
 
 ## Dados sintéticos, IA e segurança
 
-- Todos os nomes, filas, grupos, vagas, preferências e datas da simulação são
-  fictícios. Não insira dados pessoais ou dados reais de pacientes.
+- O modo público e o fluxo demonstrativo usam somente dados sintéticos. Não
+  envie dados reais para a instância publicada no Streamlit Community Cloud.
+- A importação CSV só aparece quando `FILAFUX_ENABLE_REAL_DATA_UPLOAD=1` está
+  configurada numa instalação local/privada. O app não detecta nem garante que
+  um ambiente seja privado; não habilite essa opção em uma instância pública.
+- A análise CSV aceita apenas os campos do modelo descrito abaixo, mantém os
+  dados processados na memória da sessão e não salva arquivos no disco. Limpe a
+  sessão ao terminar. Isso não substitui controles de acesso, autorização,
+  avaliação de risco ou política institucional de retenção.
+- Use apenas dados autorizados e minimizados, com identificadores pseudônimos.
+  Não inclua nomes, documentos, contato, diagnóstico, texto livre ou campos
+  adicionais. Necessidades de acessibilidade podem ser dados sensíveis; inclua
+  apenas se forem necessárias e autorizadas. Pseudonimização não equivale a
+  anonimização.
+- O resultado é uma sugestão para revisão humana. Não contata pessoas, não
+  altera filas reais, não tem integração com agendas e não determina prioridade
+  clínica. Qualquer gravação no sistema real exige integração separada,
+  autorizada, auditável e validada pelo serviço.
 - O projeto usa regras explícitas de compatibilidade e otimização combinatória.
   **Não treina nem utiliza modelo preditivo de IA/ML.**
 - Dados sintéticos não permitem avaliar validade, calibração, viés ou utilidade
@@ -136,6 +156,24 @@ trade-offs. Não devem ser interpretados como evidência clínica ou operacional
   uma pergunta bem definida, dados autorizados, governança e validação adequada.
 - Nenhuma decisão automática de diagnóstico, prescrição ou prioridade clínica é
   produzida.
+
+### Formato dos arquivos de análise privada
+
+Envie dois CSVs UTF-8. Cada arquivo pode ter até 1 MB; são aceitas até 30 vagas
+e 60 pessoas por análise. Colunas extras são recusadas para evitar a importação
+acidental de campos não previstos. Separe listas com `|`.
+
+- **Vagas:** `slot_id, service, appointment_date, period,
+  cancellation_source, unit_id`; `accessibility_features` é opcional.
+- **Fila:** `candidate_id, service, queue_position, available_dates,
+  available_periods`; `preferred_unit_ids` e `accessibility_needs` são opcionais.
+- Datas usam `AAAA-MM-DD`; períodos aceitos: `Manhã` e `Tarde`; origem do
+  cancelamento: `Serviço` ou `Paciente`.
+- `candidate_id` deve ser pseudônimo. O app usa esse valor para exibir as
+  sugestões; não inclua um nome de paciente.
+
+Exemplo de valores: `2026-11-12|2026-11-13` e `Manhã|Tarde`. Os botões de modelo
+na interface fornecem arquivos de exemplo sem dados reais.
 
 ## Executar localmente
 
@@ -151,6 +189,28 @@ python -m streamlit run app.py
 Abra o endereço local mostrado pelo Streamlit (normalmente
 `http://localhost:8501`).
 
+Para habilitar a importação de CSV numa instalação local/privada, configure a
+variável de ambiente antes de iniciar o app:
+
+```powershell
+$env:FILAFUX_ENABLE_REAL_DATA_UPLOAD = "1"
+python -m streamlit run app.py
+```
+
+Não configure essa variável na publicação pública.
+
+## Referência de produto
+
+Uma busca inicial por ferramentas do setor encontrou a [lista de espera da
+NexHealth](https://www.nexhealth.com/features/waitlist), que divulga seleção de
+pessoas por disponibilidade e tipo de consulta, aceite online e sincronização
+automática com o calendário clínico. São funcionalidades anunciadas pelo
+fornecedor, não evidência independente de impacto. O principal aprendizado
+para o FilaFlux é separar claramente a análise offline da operação real:
+sincronização e confirmação de agendamento precisam de integração explícita e
+governada. Esta comparação é um ponto de partida, não uma revisão exaustiva do
+mercado.
+
 ## Publicar no Streamlit Community Cloud
 
 O repositório inclui `requirements.txt` para instalar o projeto e suas
@@ -162,8 +222,9 @@ dependências no Community Cloud. Para publicar:
    arquivo principal `app.py`.
 3. Aguarde o build e abra a URL pública gerada pelo Streamlit.
 
-A aplicação publicada é pública. Ela usa cenários sintéticos e, mediante ação
-do visitante, consulta fontes públicas do SUS; não recebe dados de pacientes.
+A aplicação publicada é pública. Mantenha a importação desabilitada; ela usa
+cenários sintéticos e, mediante ação do visitante, consulta fontes públicas do
+SUS. Não recebe dados de pacientes.
 
 ## Testes
 
@@ -171,9 +232,10 @@ do visitante, consulta fontes públicas do SUS; não recebe dados de pacientes.
 python -m pytest
 ```
 
-Os testes cobrem compatibilidade, fluxo de ofertas, indicadores, reprodutibilidade
-dos cenários, objetivos da otimização multicritério e agregação segura da fonte
-pública por competência, sem chamadas de rede nos testes.
+Os testes cobrem compatibilidade, fluxo de ofertas, validação de CSV,
+indicadores, reprodutibilidade dos cenários, objetivos da otimização
+multicritério e agregação segura da fonte pública por competência, sem chamadas
+de rede nos testes.
 
 ## Estrutura do projeto
 

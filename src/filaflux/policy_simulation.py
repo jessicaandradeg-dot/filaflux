@@ -40,16 +40,22 @@ def generate_synthetic_scenario(
     seed: int,
     slot_count: int = 10,
     candidate_count: int = 18,
+    service_count: int = 3,
+    unit_count: int = 3,
 ) -> SyntheticScenario:
     if slot_count < 1:
         raise ValueError("slot_count must be at least 1.")
     if candidate_count < 1:
         raise ValueError("candidate_count must be at least 1.")
+    if not 1 <= service_count <= 3:
+        raise ValueError("service_count must be between 1 and 3.")
+    if not 1 <= unit_count <= 3:
+        raise ValueError("unit_count must be between 1 and 3.")
 
     rng = random.Random(seed)
-    services = ("Cardiologia", "Oftalmologia", "Clínica médica")
+    services = ("Cardiologia", "Oftalmologia", "Clínica médica")[:service_count]
     periods = ("Manhã", "Tarde")
-    units = ("UNIDADE-SIM-1", "UNIDADE-SIM-2", "UNIDADE-SIM-3")
+    units = ("UNIDADE-SIM-1", "UNIDADE-SIM-2", "UNIDADE-SIM-3")[:unit_count]
     accessibility_features = ("rota_acessivel", "banheiro_acessivel")
     areas = (
         "Território sintético A",

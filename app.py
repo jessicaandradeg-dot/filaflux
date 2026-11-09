@@ -1,3 +1,5 @@
+import os
+
 import streamlit as st
 
 from filaflux.allocation import suggest_candidates
@@ -7,12 +9,14 @@ from filaflux.analytics import (
     calculate_operational_metrics,
 )
 from filaflux.demo_data import load_demo_data
+from filaflux.data_import import ScenarioImportError, parse_scenario_csvs
 from filaflux.impact_simulation import simulate_policy_impact
 from filaflux.optimization import (
     allocate_multicriteria,
     potential_wait_days_avoided,
 )
 from filaflux.policy_simulation import (
+    SyntheticScenario,
     allocate_in_batch,
     allocate_sequentially,
     generate_synthetic_scenario,
@@ -46,6 +50,7 @@ st.set_page_config(
 )
 
 slots, candidates = load_demo_data()
+private_upload_enabled = os.getenv("FILAFUX_ENABLE_REAL_DATA_UPLOAD") == "1"
 
 if "offer_history" not in st.session_state:
     st.session_state.offer_history = {}
@@ -69,10 +74,10 @@ def update_offer_status(
 
 
 st.title("FilaFlux")
-st.subheader("Simulação inteligente de alocação de consultas canceladas")
+st.subheader("Reaproveitamento de vagas canceladas")
 st.caption(
-    "Laboratório de apoio operacional com cenários sintéticos. A seção de dados "
-    "públicos apresenta contexto agregado de capacidade e não alimenta a simulação."
+    "Compare estratégias com dados sintéticos ou, em instalação privada, "
+    "com arquivos operacionais autorizados. O app não atualiza a fila real."
 )
 
 history = st.session_state.offer_history
@@ -95,7 +100,10 @@ st.divider()
 left, right = st.columns([1, 1.5])
 
 with left:
-    st.markdown("### Vagas disponíveis")
+    st.subheader(
+        "Vagas do exemplo",
+        help="Este fluxo interativo usa apenas dados fictícios e não faz contato real.",
+    )
     for slot in slots:
         attempts = history.get(slot.slot_id, [])
         current_offer = pending_offer(attempts, slot.slot_id)
@@ -130,7 +138,10 @@ with left:
                     st.write(f"{candidate.display_name} — {status_label}")
 
 with right:
-    st.markdown("### Analisar uma vaga")
+    st.subheader(
+        "Testar uma oferta",
+        help="Simule uma recomendação, aceite ou recusa sem alterar nenhum sistema.",
+    )
     available_slots = [slot for slot in slots if slot.slot_id not in accepted_slots]
 
     if not available_slots:
@@ -246,7 +257,7 @@ st.markdown(
 st.button("Reiniciar cenário", on_click=reset_demo)
 
 st.divider()
-st.markdown("### Indicadores do cenário")
+st.markdown("### Resultado do fluxo demonstrativo")
 metrics = calculate_operational_metrics(slots, history)
 fill_rate_label = (
     f"{metrics.fill_rate:.0%}" if metrics.fill_rate is not None else "N/D"
@@ -271,90 +282,81 @@ st.caption(
     "Taxas sem observações suficientes são exibidas como N/D."
 )
 
-st.markdown("#### Preenchimento por origem do cancelamento")
-st.dataframe(
-    [
-        {
-            "Origem": source,
-            "Vagas preenchidas": filled,
-            "Vagas canceladas": total,
-            "Preenchimento": f"{filled / total:.0%}" if total else "N/D",
-        }
-        for source, (filled, total) in metrics.filled_by_cancellation_source.items()
-    ],
-    hide_index=True,
-    width="stretch",
-)
+with st.expander("Detalhar preenchimento por origem"):
+    st.dataframe(
+        [
+            {
+                "Origem": source,
+                "Vagas preenchidas": filled,
+                "Vagas canceladas": total,
+                "Preenchimento": f"{filled / total:.0%}" if total else "N/D",
+            }
+            for source, (filled, total) in metrics.filled_by_cancellation_source.items()
+        ],
+        hide_index=True,
+        width="stretch",
+    )
 
-st.markdown("#### Distribuição das ofertas por território sintético")
-distribution = calculate_group_distribution(slots, candidates, history)
-group_rates = [
-    item.offer_per_eligible_opportunity_rate
-    for item in distribution
-    if item.offer_per_eligible_opportunity_rate is not None
-]
-group_rate_spread = (
-    max(group_rates) - min(group_rates)
-    if group_rates and any(item.offers for item in distribution)
-    else None
-)
-spread_label = (
-    f"{group_rate_spread:.0%}" if group_rate_spread is not None else "N/D"
-)
-st.metric("Amplitude descritiva entre grupos sintéticos", spread_label)
-st.dataframe(
-    [
-        {
-            "Grupo fictício": item.synthetic_area,
-            "Pessoas no grupo": item.candidate_count,
-            "Pessoas com oportunidade": item.candidates_with_opportunity,
-            "Oportunidades elegíveis": item.eligible_opportunities,
-            "Ofertas": item.offers,
-            "Aceitas": item.accepted,
-            "Recusadas": item.declined,
-            "Pendentes": item.pending,
-            "Ofertas / oportunidades": (
-                f"{item.offer_per_eligible_opportunity_rate:.0%}"
-                if item.offer_per_eligible_opportunity_rate is not None
-                else "N/D"
-            ),
-        }
+with st.expander("Distribuição sintética por território"):
+    distribution = calculate_group_distribution(slots, candidates, history)
+    group_rates = [
+        item.offer_per_eligible_opportunity_rate
         for item in distribution
-    ],
-    hide_index=True,
-    width="stretch",
-)
-st.caption(
-    "Esses grupos e os dados são sintéticos. A taxa compara ofertas emitidas "
-    "com pares pessoa-vaga compatíveis no cenário, não mede equidade nem "
-    "desempenho real. A amplitude é apenas a diferença entre a maior e a menor "
-    "taxa observada, sem ajuste por necessidade, disponibilidade ou outros fatores. "
-    "Amostras pequenas limitam qualquer interpretação."
-)
+        if item.offer_per_eligible_opportunity_rate is not None
+    ]
+    group_rate_spread = (
+        max(group_rates) - min(group_rates)
+        if group_rates and any(item.offers for item in distribution)
+        else None
+    )
+    spread_label = (
+        f"{group_rate_spread:.0%}" if group_rate_spread is not None else "N/D"
+    )
+    st.metric("Amplitude descritiva entre grupos sintéticos", spread_label)
+    st.dataframe(
+        [
+            {
+                "Grupo fictício": item.synthetic_area,
+                "Pessoas no grupo": item.candidate_count,
+                "Pessoas com oportunidade": item.candidates_with_opportunity,
+                "Oportunidades elegíveis": item.eligible_opportunities,
+                "Ofertas": item.offers,
+                "Aceitas": item.accepted,
+                "Recusadas": item.declined,
+                "Pendentes": item.pending,
+                "Ofertas / oportunidades": (
+                    f"{item.offer_per_eligible_opportunity_rate:.0%}"
+                    if item.offer_per_eligible_opportunity_rate is not None
+                    else "N/D"
+                ),
+            }
+            for item in distribution
+        ],
+        hide_index=True,
+        width="stretch",
+    )
+    st.caption(
+        "Grupos sintéticos: essa taxa não mede equidade nem desempenho real."
+    )
 
-st.markdown("#### Perfil sintético de disponibilidade")
-availability_profile = calculate_availability_profile(slots, candidates)
-st.dataframe(
-    [
-        {
-            "Serviço": item.service,
-            "Data": item.appointment_date,
-            "Período": item.period,
-            "Unidade fictícia": item.unit_id,
-            "Vagas": item.slot_count,
-            "Pessoas compatíveis": item.candidates_with_availability,
-            "Pares pessoa-vaga": item.compatible_pairs,
-        }
-        for item in availability_profile
-    ],
-    hide_index=True,
-    width="stretch",
-)
-st.caption(
-    "Perfil agregado derivado das disponibilidades declaradas no cenário "
-    "sintético. Compatibilidade considera serviço, data, período e recursos de "
-    "acessibilidade requeridos; não representa oferta ou demanda de uma rede real."
-)
+with st.expander("Disponibilidade sintética por serviço e unidade"):
+    availability_profile = calculate_availability_profile(slots, candidates)
+    st.dataframe(
+        [
+            {
+                "Serviço": item.service,
+                "Data": item.appointment_date,
+                "Período": item.period,
+                "Unidade fictícia": item.unit_id,
+                "Vagas": item.slot_count,
+                "Pessoas compatíveis": item.candidates_with_availability,
+                "Pares pessoa-vaga": item.compatible_pairs,
+            }
+            for item in availability_profile
+        ],
+        hide_index=True,
+        width="stretch",
+    )
 
 if "policy_scenario" not in st.session_state:
     st.session_state.policy_scenario = generate_synthetic_scenario(
@@ -364,43 +366,169 @@ if "policy_scenario" not in st.session_state:
     )
 
 st.divider()
-with st.expander("Simulador: comparar políticas de alocação", expanded=True):
-    st.markdown(
-        "Gere um cenário sintético reproduzível e compare três estratégias "
-        "sobre as mesmas vagas e disponibilidades."
-    )
-    controls_col1, controls_col2, controls_col3 = st.columns(3)
-    seed = controls_col1.number_input(
-        "Semente do cenário",
-        min_value=0,
-        max_value=2**32 - 1,
-        value=7,
-        step=1,
-        help="A mesma semente e os mesmos tamanhos geram o mesmo cenário.",
-    )
-    simulated_slot_count = controls_col2.number_input(
-        "Vagas canceladas",
-        min_value=1,
-        max_value=30,
-        value=10,
-        step=1,
-    )
-    simulated_candidate_count = controls_col3.number_input(
-        "Pessoas na fila",
-        min_value=1,
-        max_value=60,
-        value=10,
-        step=1,
-    )
-
-    if st.button("Gerar e comparar cenário", type="primary"):
-        st.session_state.policy_scenario = generate_synthetic_scenario(
-            seed=int(seed),
-            slot_count=int(simulated_slot_count),
-            candidate_count=int(simulated_candidate_count),
+with st.expander("Simular e comparar estratégias", expanded=True):
+    if private_upload_enabled:
+        data_mode = st.radio(
+            "Dados para a análise",
+            ("Sintéticos", "CSV autorizado"),
+            horizontal=True,
+            help=(
+                "CSV autorizado só deve ser usado em instalação local/privada "
+                "com dados minimizados e pseudonimizados."
+            ),
+        )
+    else:
+        data_mode = "Sintéticos"
+        st.caption(
+            "Modo público: somente dados sintéticos. O upload real fica "
+            "desativado."
         )
 
-    scenario = st.session_state.policy_scenario
+    if data_mode == "CSV autorizado":
+        st.warning(
+            "Análise isolada: os arquivos não são gravados nem sincronizados "
+            "com a plataforma de origem. As recomendações precisam ser "
+            "validadas pela equipe e lançadas no sistema real por um processo "
+            "separado."
+        )
+        st.caption(
+            "Use somente dados autorizados, minimizados e pseudonimizados. "
+            "Não inclua nomes, documentos, contato, diagnóstico ou texto livre. "
+            "Necessidades de acessibilidade também podem ser dados sensíveis; "
+            "inclua-as somente se forem necessárias e autorizadas. "
+            "Limites: 1 MB por arquivo, 30 vagas e 60 pessoas."
+        )
+        template_col1, template_col2 = st.columns(2)
+        template_col1.download_button(
+            "Baixar modelo de vagas",
+            data=(
+                "slot_id,service,appointment_date,period,cancellation_source,"
+                "unit_id,accessibility_features\n"
+                "CANCEL-001,Cardiologia,2026-11-12,Manhã,Paciente,"
+                "UNIDADE-1,rota_acessivel\n"
+            ),
+            file_name="modelo_vagas.csv",
+            mime="text/csv",
+        )
+        template_col2.download_button(
+            "Baixar modelo da fila",
+            data=(
+                "candidate_id,service,queue_position,available_dates,"
+                "available_periods,preferred_unit_ids,accessibility_needs\n"
+                "PSEUDO-001,Cardiologia,1,2026-11-12|2026-11-13,"
+                "Manhã|Tarde,UNIDADE-1,rota_acessivel\n"
+            ),
+            file_name="modelo_fila.csv",
+            mime="text/csv",
+        )
+
+        st.session_state.setdefault("upload_widget_version", 0)
+        if st.button("Limpar dados importados"):
+            st.session_state.pop("imported_policy_scenario", None)
+            st.session_state.upload_widget_version += 1
+            st.rerun()
+
+        upload_version = st.session_state.upload_widget_version
+        with st.form(f"real-data-upload-{upload_version}"):
+            slots_file = st.file_uploader(
+                "Arquivo CSV de vagas canceladas",
+                type=["csv"],
+                key=f"slots-csv-{upload_version}",
+            )
+            candidates_file = st.file_uploader(
+                "Arquivo CSV da fila",
+                type=["csv"],
+                key=f"candidates-csv-{upload_version}",
+            )
+            validate_upload = st.form_submit_button("Validar e analisar")
+
+        if validate_upload:
+            if slots_file is None or candidates_file is None:
+                st.session_state.pop("imported_policy_scenario", None)
+                st.error("Selecione os dois arquivos CSV para continuar.")
+            else:
+                try:
+                    imported_slots, imported_candidates = parse_scenario_csvs(
+                        slots_file.getvalue(),
+                        candidates_file.getvalue(),
+                    )
+                except ScenarioImportError as error:
+                    st.session_state.pop("imported_policy_scenario", None)
+                    st.error(f"Não foi possível validar os arquivos: {error}")
+                else:
+                    st.session_state.imported_policy_scenario = SyntheticScenario(
+                        seed=0,
+                        slots=imported_slots,
+                        candidates=imported_candidates,
+                    )
+                    st.success(
+                        f"Arquivos validados: {len(imported_slots)} vaga(s) e "
+                        f"{len(imported_candidates)} pessoa(s)."
+                    )
+
+        scenario = st.session_state.get("imported_policy_scenario")
+        if scenario is None:
+            st.info(
+                "Envie os dois arquivos e valide o formato para ver os "
+                "resultados. Nenhuma alocação será aplicada."
+            )
+            st.stop()
+        scenario_is_imported = True
+    else:
+        st.session_state.pop("imported_policy_scenario", None)
+        controls_col1, controls_col2, controls_col3 = st.columns(3)
+        seed = controls_col1.number_input(
+            "Semente",
+            min_value=0,
+            max_value=2**32 - 1,
+            value=7,
+            step=1,
+            help="A mesma semente reproduz o mesmo cenário.",
+        )
+        simulated_slot_count = controls_col2.number_input(
+            "Vagas canceladas",
+            min_value=1,
+            max_value=30,
+            value=10,
+            step=1,
+        )
+        simulated_candidate_count = controls_col3.number_input(
+            "Pessoas na fila",
+            min_value=1,
+            max_value=60,
+            value=10,
+            step=1,
+        )
+        profile_col1, profile_col2 = st.columns(2)
+        simulated_service_count = profile_col1.number_input(
+            "Serviços ativos",
+            min_value=1,
+            max_value=3,
+            value=3,
+            step=1,
+            help="Ajuste a quantidade de serviços da unidade ou rede simulada.",
+        )
+        simulated_unit_count = profile_col2.number_input(
+            "Unidades participantes",
+            min_value=1,
+            max_value=3,
+            value=3,
+            step=1,
+            help="Ajuste a quantidade de unidades fictícias do cenário.",
+        )
+
+        if st.button("Gerar e comparar cenário", type="primary"):
+            st.session_state.policy_scenario = generate_synthetic_scenario(
+                seed=int(seed),
+                slot_count=int(simulated_slot_count),
+                candidate_count=int(simulated_candidate_count),
+                service_count=int(simulated_service_count),
+                unit_count=int(simulated_unit_count),
+            )
+
+        scenario = st.session_state.policy_scenario
+        scenario_is_imported = False
+
     sequential_result = allocate_sequentially(scenario.slots, scenario.candidates)
     batch_result = allocate_in_batch(scenario.slots, scenario.candidates)
     multicriteria_result = allocate_multicriteria(
@@ -412,10 +540,15 @@ with st.expander("Simulador: comparar políticas de alocação", expanded=True):
         multicriteria_result.filled_slot_count - sequential_result.filled_slot_count
     )
 
-    st.caption(
-        f"Cenário {len(scenario.slots)} vaga(s), "
-        f"{len(scenario.candidates)} pessoa(s), semente {scenario.seed}."
+    scenario_description = (
+        "Dados operacionais importados, sem conexão com a plataforma de origem."
+        if scenario_is_imported
+        else (
+            f"Cenário sintético com {len(scenario.slots)} vaga(s), "
+            f"{len(scenario.candidates)} pessoa(s), semente {scenario.seed}."
+        )
     )
+    st.caption(scenario_description)
     sequential_col, batch_col, multicriteria_col = st.columns(3)
     sequential_col.metric(
         "Fila sequencial — vagas alocadas",
@@ -431,29 +564,30 @@ with st.expander("Simulador: comparar políticas de alocação", expanded=True):
         f"{multicriteria_result.filled_slot_count}/{multicriteria_result.slot_count}",
         delta=f"{multicriteria_gain:+d} vs. sequencial",
     )
-    wait_col1, wait_col2 = st.columns(2)
-    sequential_wait_days = potential_wait_days_avoided(
-        sequential_result,
-        scenario.slots,
-        scenario.candidates,
-    )
-    multicriteria_wait_days = potential_wait_days_avoided(
-        multicriteria_result,
-        scenario.slots,
-        scenario.candidates,
-    )
-    wait_col1.metric(
-        "Dias potenciais vs. referência sintética — sequencial",
-        str(sequential_wait_days)
-        if sequential_wait_days is not None
-        else "N/D",
-    )
-    wait_col2.metric(
-        "Dias potenciais vs. referência sintética — multicritério",
-        str(multicriteria_wait_days)
-        if multicriteria_wait_days is not None
-        else "N/D",
-    )
+    if not scenario_is_imported:
+        wait_col1, wait_col2 = st.columns(2)
+        sequential_wait_days = potential_wait_days_avoided(
+            sequential_result,
+            scenario.slots,
+            scenario.candidates,
+        )
+        multicriteria_wait_days = potential_wait_days_avoided(
+            multicriteria_result,
+            scenario.slots,
+            scenario.candidates,
+        )
+        wait_col1.metric(
+            "Dias potenciais vs. referência sintética — sequencial",
+            str(sequential_wait_days)
+            if sequential_wait_days is not None
+            else "N/D",
+        )
+        wait_col2.metric(
+            "Dias potenciais vs. referência sintética — multicritério",
+            str(multicriteria_wait_days)
+            if multicriteria_wait_days is not None
+            else "N/D",
+        )
     objective_col1, objective_col2 = st.columns(2)
     objective_col1.metric(
         "Soma das posições de fila — multicritério",
@@ -464,24 +598,20 @@ with st.expander("Simulador: comparar políticas de alocação", expanded=True):
         multicriteria_result.preference_mismatches,
     )
 
-    st.markdown("#### Como as políticas funcionam")
-    st.markdown(
-        "- **Fila sequencial:** percorre as vagas na ordem gerada e aloca a "
-        "primeira pessoa compatível disponível.\n"
-        "- **Lote máximo:** procura o maior número de encaixes compatíveis.\n"
-        "- **Multicritério experimental:** mantém o maior preenchimento; entre "
-        "essas soluções, minimiza a soma das posições na fila; só então reduz "
-        "conflitos com preferências declaradas de turno/unidade. Necessidades de "
-        "acessibilidade são restrições obrigatórias, não preferências.\n"
-        "- Cada pessoa pode receber no máximo uma alocação por política. São "
-        "simulações, não ofertas reais, e a regra de fila é uma hipótese a "
-        "validar com cada serviço."
-    )
-    st.caption(
-        "Os dias potenciais são a diferença entre a data-base fictícia de "
-        "atendimento e a data da vaga alocada. São um contrafactual sintético, "
-        "não dias de espera realmente evitados."
-    )
+    with st.expander("Como as estratégias funcionam"):
+        st.markdown(
+            "- **Sequencial:** primeira pessoa compatível na ordem da fila.\n"
+            "- **Lote máximo:** busca o maior número de encaixes.\n"
+            "- **Multicritério:** maximiza encaixes, considera posição na fila "
+            "e preferências de turno/unidade. Acessibilidade é requisito.\n"
+            "- Cada pessoa é alocada no máximo uma vez. Critérios e prioridades "
+            "precisam de validação e autorização do serviço."
+        )
+        if not scenario_is_imported:
+            st.caption(
+                "Dias potenciais são uma comparação hipotética com datas "
+                "sintéticas, não dias de espera realmente evitados."
+            )
 
     st.markdown("#### Alocações lado a lado")
     candidate_by_id = {
@@ -498,6 +628,7 @@ with st.expander("Simulador: comparar políticas de alocação", expanded=True):
                 "Serviço": slot.service,
                 "Data": slot.appointment_date.strftime("%d/%m/%Y"),
                 "Período": slot.period,
+                "Unidade": slot.unit_id,
                 "Sequencial": (
                     candidate_by_id[sequential_candidate_id].display_name
                     if sequential_candidate_id
@@ -513,68 +644,85 @@ with st.expander("Simulador: comparar políticas de alocação", expanded=True):
                     if multicriteria_candidate_id
                     else "Sem alocação"
                 ),
+                "Posição na fila": (
+                    str(
+                        candidate_by_id[
+                            multicriteria_candidate_id
+                        ].queue_position
+                    )
+                    if multicriteria_candidate_id
+                    else "Sem alocação"
+                ),
             }
         )
     st.dataframe(comparison_rows, hide_index=True, width="stretch")
 
-    st.markdown("#### Distribuição por território sintético")
-    sequential_distribution = {
-        row["Grupo fictício"]: row
-        for row in summarize_policy_results(
-            sequential_result,
-            scenario.candidates,
+    if scenario_is_imported:
+        st.info(
+            "A estratégia multicritério gera sugestões para revisão humana. "
+            "Ela não calcula prioridade clínica, não contata pacientes e não "
+            "grava a realocação na plataforma."
         )
-    }
-    batch_distribution = {
-        row["Grupo fictício"]: row
-        for row in summarize_policy_results(
-            batch_result,
-            scenario.candidates,
+    else:
+        st.markdown("#### Distribuição por território sintético")
+        sequential_distribution = {
+            row["Grupo fictício"]: row
+            for row in summarize_policy_results(
+                sequential_result,
+                scenario.candidates,
+            )
+        }
+        batch_distribution = {
+            row["Grupo fictício"]: row
+            for row in summarize_policy_results(
+                batch_result,
+                scenario.candidates,
+            )
+        }
+        multicriteria_distribution = {
+            row["Grupo fictício"]: row
+            for row in summarize_policy_results(
+                multicriteria_result,
+                scenario.candidates,
+            )
+        }
+        distribution_rows = []
+        all_areas = (
+            set(sequential_distribution)
+            | set(batch_distribution)
+            | set(multicriteria_distribution)
         )
-    }
-    multicriteria_distribution = {
-        row["Grupo fictício"]: row
-        for row in summarize_policy_results(
-            multicriteria_result,
-            scenario.candidates,
+        for area in sorted(all_areas):
+            sequential_row = sequential_distribution.get(area, {})
+            batch_row = batch_distribution.get(area, {})
+            multicriteria_row = multicriteria_distribution.get(area, {})
+            eligible_pairs = max(
+                sequential_row.get("Pares elegíveis", 0),
+                batch_row.get("Pares elegíveis", 0),
+                multicriteria_row.get("Pares elegíveis", 0),
+            )
+            distribution_rows.append(
+                {
+                    "Grupo fictício": area,
+                    "Pares elegíveis": eligible_pairs,
+                    "Alocadas — sequencial": sequential_row.get(
+                        "Vagas alocadas",
+                        0,
+                    ),
+                    "Alocadas — lote": batch_row.get("Vagas alocadas", 0),
+                    "Alocadas — multicritério": multicriteria_row.get(
+                        "Vagas alocadas",
+                        0,
+                    ),
+                }
+            )
+        st.dataframe(distribution_rows, hide_index=True, width="stretch")
+        st.caption(
+            "Grupos sintéticos e taxas descritivas não demonstram equidade ou "
+            "desempenho real. Critérios precisam ser validados e autorizados."
         )
-    }
-    distribution_rows = []
-    all_areas = (
-        set(sequential_distribution)
-        | set(batch_distribution)
-        | set(multicriteria_distribution)
-    )
-    for area in sorted(all_areas):
-        sequential_row = sequential_distribution.get(area, {})
-        batch_row = batch_distribution.get(area, {})
-        multicriteria_row = multicriteria_distribution.get(area, {})
-        eligible_pairs = max(
-            sequential_row.get("Pares elegíveis", 0),
-            batch_row.get("Pares elegíveis", 0),
-            multicriteria_row.get("Pares elegíveis", 0),
-        )
-        distribution_rows.append(
-            {
-                "Grupo fictício": area,
-                "Pares elegíveis": eligible_pairs,
-                "Alocadas — sequencial": sequential_row.get("Vagas alocadas", 0),
-                "Alocadas — lote": batch_row.get("Vagas alocadas", 0),
-                "Alocadas — multicritério": multicriteria_row.get(
-                    "Vagas alocadas",
-                    0,
-                ),
-            }
-        )
-    st.dataframe(distribution_rows, hide_index=True, width="stretch")
-    st.caption(
-        "Nenhuma política otimiza equidade. A composição dos grupos é fictícia; "
-        "as contagens não demonstram impacto, justiça ou desempenho clínico. Em "
-        "serviço real, regras e critérios precisam ser validados com profissionais "
-        "e autorizados pelo serviço."
-    )
 
-with st.expander("Simulação de impacto em múltiplos cenários"):
+with st.expander("Impacto em múltiplos cenários (sintéticos)"):
     st.markdown(
         "Repita a comparação em cenários sintéticos reproduzíveis para observar "
         "a variação dos resultados, em vez de concluir a partir de uma única "

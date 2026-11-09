@@ -1,5 +1,7 @@
 from datetime import date
 
+import pytest
+
 from filaflux.models import Candidate, CancelledSlot
 from filaflux.policy_simulation import (
     allocate_in_batch,
@@ -100,6 +102,24 @@ def test_scenario_generation_is_reproducible() -> None:
     second = generate_synthetic_scenario(seed=27, slot_count=8, candidate_count=12)
 
     assert first == second
+
+
+def test_scenario_generation_respects_service_and_unit_profile() -> None:
+    scenario = generate_synthetic_scenario(
+        seed=27,
+        slot_count=12,
+        candidate_count=10,
+        service_count=1,
+        unit_count=1,
+    )
+
+    assert {slot.service for slot in scenario.slots} == {"Cardiologia"}
+    assert {slot.unit_id for slot in scenario.slots} == {"UNIDADE-SIM-1"}
+
+
+def test_scenario_generation_rejects_out_of_range_profile() -> None:
+    with pytest.raises(ValueError, match="service_count"):
+        generate_synthetic_scenario(seed=1, service_count=0)
 
 
 def test_default_demonstration_seed_shows_batch_allocation_gain() -> None:
