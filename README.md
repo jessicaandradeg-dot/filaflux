@@ -1,126 +1,191 @@
 # FilaFlux
 
-**Simulador de alocação operacional para vagas de consultas canceladas.**
-O FilaFlux demonstra como regras transparentes de compatibilidade e otimização
-podem ajudar uma equipe a avaliar o reaproveitamento de vagas. A simulação usa
-dados sintéticos e não se conecta a agendas, filas ou sistemas de saúde reais.
-Uma seção opcional apresenta indicadores municipais agregados de uma fonte
-pública de capacidade hospitalar e da produção ambulatorial do SUS, sem
-interferir na simulação.
+**Simulador de alocação operacional para o reaproveitamento de vagas de consultas canceladas.**
 
+O **FilaFlux** é um protótipo que demonstra como regras transparentes de compatibilidade e técnicas de otimização podem apoiar a análise do reaproveitamento de vagas de consultas canceladas.
 
-## O que está sendo demonstrado
+A proposta é permitir que uma equipe de saúde simule diferentes estratégias de alocação, visualize os possíveis encaixes e compare os resultados de cada abordagem.
 
-1. **Fluxo operacional de uma vaga cancelada:** a equipe seleciona a vaga
-   fictícia, visualiza a próxima pessoa compatível e registra uma oferta simulada.
-   Pode registrar aceite ou recusa; a pendência reserva a pessoa e a recusa
-   permite avançar na fila.
-2. **Compatibilidade explicável:** serviço, data e período precisam coincidir.
-   Necessidades sintéticas de acessibilidade são requisitos obrigatórios.
-3. **Comparação de políticas:** o mesmo conjunto de vagas e disponibilidades é
-   avaliado pela alocação sequencial, pelo emparelhamento de máximo preenchimento
-   e por uma otimização multicritério experimental.
-4. **Perfil de disponibilidade:** contagem agregada de vagas, pessoas
-   compatíveis e pares pessoa-vaga por serviço, data, período e unidade fictícia.
-5. **Indicadores descritivos:** preenchimento, respostas a ofertas e distribuição
-   de oportunidades entre grupos territoriais fictícios.
-6. **Simulação em múltiplos cenários:** repetição reprodutível da comparação de
-   políticas, com média, mediana, amplitude e frequência dos melhores
-   preenchimentos no conjunto simulado.
+A simulação utiliza exclusivamente dados sintéticos e não se conecta a agendas, filas ou sistemas de saúde reais.
 
-## Para quem e para qual problema
+O aplicativo também apresenta, em uma seção independente e opcional, indicadores municipais agregados de capacidade hospitalar e produção ambulatorial do SUS. Esses indicadores servem apenas para contextualizar o cenário de saúde e não interferem na simulação.
 
-Cancelamentos de consultas podem deixar horários vagos enquanto pessoas
-aguardam atendimento. O conceito do FilaFlux é apoiar a análise operacional de
-como identificar encaixes compatíveis e comparar regras de reaproveitamento.
-Em um serviço real, a equipe responsável continuaria no controle das decisões,
-das regras autorizadas e do contato com as pessoas.
+**[Acessar o FilaFlux](https://filaflux-saude.streamlit.app/)**
 
-O protótipo **não** demonstra que filas reais serão reduzidas. Não faz contato,
-não consulta sistemas reais, não estima urgência, não define prioridade clínica
-e não substitui profissionais. Seu propósito é tornar explícitas as regras,
-trade-offs e perguntas que precisariam ser validadas antes de qualquer piloto.
+---
 
-## Como funcionam as políticas
+## 1. Objetivo do projeto
 
-- **Fila sequencial:** percorre as vagas na ordem gerada e atribui a cada uma a
-  primeira pessoa compatível ainda não utilizada. É simples, mas uma escolha
-  flexível para uma vaga pode impedir outro encaixe.
-- **Lote máximo:** considera as vagas em conjunto e busca maximizar o total de
-  encaixes compatíveis, usando cada pessoa no máximo uma vez.
-- **Multicritério experimental:** primeiro maximiza o total preenchido; entre
-  soluções com esse total, minimiza a soma das posições de fila fornecidas no
-  cenário; depois minimiza conflitos com preferências fictícias de unidade e
-  período. As necessidades de acessibilidade são restrições obrigatórias.
+Cancelamentos de consultas podem deixar horários disponíveis enquanto outras pessoas aguardam atendimento. O FilaFlux explora uma possível estratégia para reaproveitar essas vagas: identificar pessoas compatíveis e comparar diferentes regras de alocação.
 
-A ordem de fila é apenas um atributo fornecido pelo cenário — o sistema não
-calcula prioridade clínica. O critério multicritério é uma hipótese para
-discussão, não uma regra assistencial recomendada ou aprovada.
+O protótipo busca responder a perguntas como:
 
-## O que os números significam (e não significam)
+- Como identificar pessoas compatíveis com uma vaga cancelada?
+- Como diferentes estratégias de alocação influenciam o número de encaixes?
+- Uma alocação que considera as vagas em conjunto consegue aproveitar melhor as oportunidades?
+- Quais são os trade-offs entre preenchimento, posição na fila e preferências de atendimento?
+- Como os resultados se comportam em diferentes cenários simulados?
 
-- **Vagas alocadas:** quantidade de pares compatíveis encontrados pela política
-  no cenário.
-- **Dias potenciais:** diferença hipotética entre uma data-base sintética e a
-  data da vaga; não representa tempo de espera real nem dias efetivamente
-  evitados.
-- **Amplitude entre grupos:** diferença descritiva entre taxas de ofertas por
-  oportunidades fictícias. Não é uma medida validada de equidade e não ajusta
-  por necessidade, disponibilidade, barreiras de acesso ou contexto social.
-- **Simulação em múltiplos cenários:** análise de sensibilidade condicionada às
-  distribuições artificiais programadas. Não é estimativa de impacto no SUS,
-  avaliação causal, probabilidade de sucesso no mundo real ou validação externa.
+Em um serviço real, a equipe responsável continuaria no controle das decisões, das regras autorizadas e do contato com as pessoas.
 
-Os resultados servem para demonstrar o funcionamento do software e discutir
-trade-offs. Não devem ser interpretados como evidência clínica ou operacional.
+## 2. Funcionalidades
 
-## Dados públicos de capacidade e produção
+O aplicativo permite explorar seis componentes principais:
 
-- A seção opcional consulta a base oficial [Hospitais e Leitos — Portal de Dados
-  Abertos do SUS](https://dadosabertos.saude.gov.br/dataset/hospitais-e-leitos),
-  derivada do CNES e usando o arquivo anual de 2025.
-- O arquivo é processado em memória e agregado por competência para o município
-  do Rio de Janeiro (código municipal usado pela base: `330455`). O app mantém
-  apenas os indicadores mensais agregados na sessão; não grava o arquivo bruto
-  nem mostra ou persiste registros por estabelecimento.
-- A extração validada contém as 12 competências de 2025. Em dezembro, a base
-  registra 9.764 leitos SUS, 1.287 leitos de UTI SUS e 192 estabelecimentos.
-- A interface permite comparar a evolução mensal desses três indicadores com
-  janeiro de 2025 como referência; a comparação é descritiva, sem inferência
-  sobre ocupação ou capacidade disponível.
-- São leitos cadastrados, não disponibilidade em tempo real. Esses dados não
-  medem filas, tempo de espera, cancelamentos ou produção ambulatorial e não
-  comprovam impacto do FilaFlux. O indicador é apenas contexto municipal e não
-  alimenta a alocação sintética.
-- A base pode conter campos cadastrais de estabelecimentos; o processamento
-  seleciona apenas município, competência, código temporário de estabelecimento
-  para contagem/checagem de duplicidades e contagens de leitos. Nenhum dado de
-  paciente é usado.
-- A produção ambulatorial é obtida separadamente pela [tabulação municipal
-  oficial do SIA/SUS no DATASUS](https://datasus.saude.gov.br/acesso-a-informacao/producao-ambulatorial-sia-sus/),
-  não pelos arquivos brutos estaduais nem por registros individualizados. A
-  consulta usa município do estabelecimento (`330455`, Rio de Janeiro), ano
-  `2025`, linha Município, coluna Ano/mês de processamento, medida Quantidade
-  aprovada (`Qtd.aprovada`) e todas as categorias para os demais filtros.
-- A resposta CSV é validada para garantir cabeçalho esperado, presença exata dos
-  12 meses, linha municipal única, valores inteiros e consistência entre soma
-  mensal e total anual. Apenas os 12 totais e metadados (fonte, parâmetros,
-  endereço do CSV e data/hora da consulta) são mantidos na sessão; o CSV não é
-  salvo pelo app.
-- A interface apresenta a série SIA em gráfico próprio e, quando a série de
-  leitos também foi carregada, coloca os três indicadores lado a lado na tabela
-  mensal, sem combiná-los em um índice nem compartilhar escala gráfica.
-- **Quantidade aprovada não é número de pessoas ou de usuários únicos, demanda
-  não atendida, fila, espera ou prova de acesso efetivo.** É produção processada
-  e aprovada no SIA, agrupada pelo mês de processamento — não necessariamente
-  pelo mês em que o atendimento ocorreu. Leitos cadastrados também não
-  representam disponibilidade em tempo real. A comparação é descritiva e não
-  demonstra associação causal, capacidade assistencial efetiva ou impacto do
-  FilaFlux.
-- O TabNet pode atualizar os meses mais recentes. A data/hora registrada é a da
-  consulta feita pelo app e deve acompanhar qualquer captura usada em uma
-  apresentação. A série é contexto municipal e não alimenta a simulação de
-  alocação.
+1. **Simulação de vagas canceladas:** seleção de uma vaga fictícia e identificação da próxima pessoa compatível, com registro de uma oferta simulada e possibilidade de aceite ou recusa.
+2. **Compatibilidade explicável:** verificação de critérios como serviço, data, período e necessidades fictícias de acessibilidade, tratadas como requisitos obrigatórios.
+3. **Comparação de estratégias de alocação:** avaliação de três políticas distintas utilizando o mesmo conjunto de vagas e disponibilidades.
+4. **Perfil de disponibilidade:** apresentação de contagens agregadas de vagas, pessoas compatíveis e pares pessoa-vaga, considerando serviço, data, período e unidade fictícia.
+5. **Indicadores de desempenho:** visualização de preenchimento, respostas às ofertas e distribuição de oportunidades entre grupos territoriais fictícios.
+6. **Simulação de múltiplos cenários:** repetição reprodutível das comparações, com apresentação de média, mediana, amplitude e frequência dos melhores resultados de preenchimento.
 
-# Aplicativo criado
-- Acesse: filaflux-saude.streamlit.app
+## 3. Estratégias de alocação
+
+O FilaFlux compara três políticas de alocação:
+
+### 3.1. Fila sequencial
+
+Percorre as vagas na ordem gerada e atribui a cada uma a primeira pessoa compatível ainda não utilizada.
+
+É uma abordagem simples, mas uma escolha para determinada vaga pode impedir outro encaixe que seria possível com uma distribuição diferente.
+
+### 3.2. Emparelhamento de máximo preenchimento
+
+Considera as vagas em conjunto e busca maximizar o número total de encaixes compatíveis, garantindo que cada pessoa seja utilizada no máximo uma vez.
+
+Essa abordagem permite avaliar se uma análise conjunta das oportunidades consegue alcançar um preenchimento superior ao da estratégia sequencial.
+
+### 3.3. Otimização multicritério experimental
+
+Adota uma sequência de objetivos:
+
+1. Maximizar o número total de vagas preenchidas.
+2. Entre as soluções com o mesmo preenchimento, minimizar a soma das posições de fila fornecidas no cenário.
+3. Em seguida, minimizar conflitos com preferências fictícias de unidade e período.
+
+As necessidades de acessibilidade são consideradas restrições obrigatórias, e não critérios opcionais de pontuação.
+
+**Importante:** a posição na fila é um atributo fornecido pelo cenário sintético. O sistema não calcula prioridade clínica. A estratégia multicritério é experimental e serve para discussão metodológica, não constituindo uma regra assistencial recomendada ou aprovada.
+
+## 4. Indicadores e interpretação dos resultados
+
+O aplicativo apresenta indicadores para facilitar a comparação entre as estratégias.
+
+| Indicador | Interpretação |
+|---|---|
+| Vagas alocadas | Quantidade de pares compatíveis encontrados pela política no cenário. |
+| Dias potenciais | Diferença hipotética entre uma data-base sintética e a data da vaga. |
+| Respostas às ofertas | Distribuição dos resultados das ofertas simuladas. |
+| Amplitude entre grupos | Diferença descritiva entre taxas de ofertas por oportunidades fictícias. |
+| Resultados por cenário | Média, mediana, amplitude e frequência dos melhores preenchimentos nas simulações. |
+
+A interpretação desses indicadores exige algumas ressalvas:
+
+- Dias potenciais não representam tempo de espera real nem dias efetivamente evitados.
+- A amplitude entre grupos não é uma medida validada de equidade. Não considera diferenças de necessidade, disponibilidade, barreiras de acesso ou contexto social.
+- As simulações de múltiplos cenários dependem das distribuições artificiais programadas.
+- Os resultados não representam estimativas de impacto no SUS, avaliações causais, probabilidades de sucesso no mundo real ou validações externas.
+
+Os indicadores servem para demonstrar o funcionamento do software e discutir os trade-offs entre as políticas avaliadas.
+
+## 5. Integração de dados públicos do SUS
+
+Além da simulação, o FilaFlux apresenta uma seção opcional com indicadores municipais agregados provenientes de duas fontes públicas: CNES e SIA/SUS.
+
+Essas fontes são processadas separadamente e não alimentam as regras de alocação.
+
+### 5.1. Capacidade hospitalar — CNES
+
+A seção de capacidade hospitalar utiliza a base oficial [Hospitais e Leitos — Portal de Dados Abertos do SUS](https://dadosabertos.saude.gov.br/dataset/hospitais-e-leitos), derivada do Cadastro Nacional de Estabelecimentos de Saúde (CNES), utilizando o arquivo anual de 2025.
+
+O processamento contempla:
+
+- Município do Rio de Janeiro (código `330455`).
+- Agregação mensal por competência.
+- Contagem de leitos SUS, leitos de UTI SUS e estabelecimentos.
+- Comparação da evolução mensal dos indicadores, utilizando janeiro de 2025 como referência.
+
+A extração validada contém as 12 competências de 2025.
+
+Em dezembro, foram registrados:
+
+- **9.764 leitos SUS**;
+- **1.287 leitos de UTI SUS**;
+- **192 estabelecimentos**.
+
+O arquivo é processado em memória. O aplicativo seleciona os campos necessários para a agregação, utilizando um código temporário de estabelecimento para contagem e verificação de duplicidades. Apenas os indicadores mensais agregados são mantidos na sessão. O arquivo bruto e os registros individualizados por estabelecimento não são persistidos pelo aplicativo.
+
+### 5.2. Produção ambulatorial — SIA/SUS
+
+A produção ambulatorial é consultada separadamente por meio da [tabulação municipal oficial do SIA/SUS no DATASUS](https://datasus.saude.gov.br/acesso-a-informacao/producao-ambulatorial-sia-sus/).
+
+A consulta utiliza os seguintes parâmetros:
+
+| Parâmetro | Configuração |
+|---|---|
+| Município do estabelecimento | Rio de Janeiro (`330455`) |
+| Ano | 2025 |
+| Linha | Município |
+| Coluna | Ano/mês de processamento |
+| Medida | Quantidade aprovada (`Qtd.aprovada`) |
+| Demais filtros | Todas as categorias |
+
+A consulta utiliza a tabulação municipal agregada, não arquivos brutos estaduais nem registros individualizados.
+
+A resposta CSV passa por validações para verificar:
+
+- Presença do cabeçalho esperado.
+- Existência exata dos 12 meses.
+- Presença de uma única linha municipal.
+- Valores inteiros.
+- Consistência entre a soma dos valores mensais e o total anual.
+
+A extração validada retornou **194.949.723 procedimentos ambulatoriais aprovados** em 2025.
+
+O aplicativo mantém na sessão apenas os 12 totais mensais e os metadados da consulta, incluindo fonte, parâmetros, endereço do CSV e data/hora de execução. O arquivo CSV não é salvo pelo aplicativo.
+
+### 5.3. Apresentação e limites dos indicadores públicos
+
+Os indicadores do CNES e do SIA/SUS são apresentados separadamente:
+
+- A produção ambulatorial possui gráfico próprio.
+- Quando as duas séries estão carregadas, os indicadores são apresentados lado a lado em uma tabela mensal.
+- Não há combinação dos indicadores em um índice único nem compartilhamento de escala gráfica.
+
+É importante considerar que:
+
+- Quantidade aprovada no SIA/SUS não equivale ao número de pessoas ou usuários únicos.
+- Produção aprovada não representa demanda não atendida, tamanho de fila, tempo de espera ou comprovação de acesso efetivo.
+- O mês de processamento não corresponde necessariamente ao mês em que o atendimento ocorreu.
+- Leitos cadastrados no CNES não significam leitos disponíveis em tempo real.
+- Os indicadores não medem cancelamentos, filas ou disponibilidade de consultas.
+- A comparação é descritiva e não demonstra associação causal, capacidade assistencial efetiva ou impacto do FilaFlux.
+
+O TabNet pode atualizar os meses mais recentes. Por isso, a data e o horário da consulta registrados pelo aplicativo devem acompanhar qualquer captura utilizada em apresentações.
+
+**Os dados públicos têm finalidade exclusivamente contextual e não interferem na simulação de alocação.**
+
+## 6. Limitações e escopo de aplicação
+
+O FilaFlux é um protótipo experimental de demonstração, não um sistema operacional de gestão de filas de saúde.
+
+Atualmente, o aplicativo:
+
+- Não utiliza dados reais de pacientes ou consultas canceladas.
+- Não se conecta a agendas, filas ou sistemas de regulação.
+- Não realiza contato ou envio de notificações às pessoas.
+- Não estima urgência ou prioridade clínica.
+- Não substitui a avaliação dos profissionais de saúde.
+- Não comprova redução de filas, tempo de espera ou melhoria no acesso aos serviços.
+
+A aplicação de estratégias semelhantes em serviços reais exigiria validação com dados operacionais, definição de critérios assistenciais autorizados, avaliação de equidade, requisitos de segurança e privacidade e participação das equipes responsáveis.
+
+O propósito do FilaFlux é demonstrar uma proposta de solução, tornar explícitas as regras de compatibilidade e permitir a comparação de estratégias de alocação em cenários controlados.
+
+---
+
+## 7. Aplicativo
+
+**Acesse o protótipo:** [https://filaflux-saude.streamlit.app/](https://filaflux-saude.streamlit.app/)
+
+**Código-fonte:** [https://github.com/jessicaandradeg-dot/filaflux](https://github.com/jessicaandradeg-dot/filaflux)
